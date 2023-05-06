@@ -3,6 +3,8 @@ import json
 import re
 import config
 import psycopg2
+from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
+import create_db
 
 YOUR_API_KEY = config.YOUR_API_KEY
 
@@ -41,6 +43,11 @@ conn = psycopg2.connect(
     password=config.PASSWORD
 )
 
+# Set isolation level to AUTOCOMMIT
+conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+
+create_db.create_tables(conn)
+
 # Open a cursor to perform database operations
 cur = conn.cursor()
 
@@ -54,6 +61,9 @@ for item in albums_bands:
     for a in albums:
         if a != "(null)":
             cur.execute("INSERT INTO Discs (name, band) VALUES (%s, %s)", (a, name))
+
+
+create_db.load_users(conn)
 
 # Commit the transaction and close the cursor and connection
 conn.commit()
