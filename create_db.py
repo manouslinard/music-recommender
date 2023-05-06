@@ -17,6 +17,9 @@ def create_tables(conn):
                 username VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
+                gender CHAR,
+                country VARCHAR(50),
+                age INTEGER,
                 phone VARCHAR(100) NOT NULL
             )
             """,
@@ -88,12 +91,18 @@ def load_users(conn):
     df = pd.read_csv("users.csv")
     if df['username'].isnull().any():
         raise ValueError("Missing username in the CSV file.")
+    if df['age'].min() <= 10:
+        raise ValueError("Invalid age in the CSV file (users should be above 10 years old).")
+    if df['gender'].isin(['N']).any():
+        raise ValueError("Invalid gender in the CSV file (should be M or F).")
+    df['gender'].fillna("N", inplace=True)
+    if not df['gender'].isin(['M', 'F', 'N']).all():
+        raise ValueError("Invalid gender in the CSV file (should be M or F).")
+    df['age'].fillna(-1, inplace=True)
     df.fillna("unregistered", inplace=True)
-    
-    # Iterate over the rows of the DataFrame and insert each row into the 'users' table
-    for index, row in df.iterrows():
-        cursor.execute("INSERT INTO users (username, first_name, last_name, phone) VALUES (%s, %s, %s, %s)",
-                   (row['username'], row['first_name'], row['last_name'], row['phone']))
-    # Commit the changes and close the connection
+
+    cursor.executemany("INSERT INTO users (username, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                   [(row['username'], row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
+
     conn.commit()
     print("Data inserted successfully.")
