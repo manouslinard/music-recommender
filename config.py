@@ -1,5 +1,5 @@
-PASSWORD = "pass123"
-USERNAME = "postgres"
+PASSWORD = "yourpassword"
+USERNAME = "yourusername"
 HOST = "localhost"
 PORT = 5432
 DATABASE = "music_band"

@@ -2,6 +2,7 @@ import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import config # a separate config file with database credentials
 
+
 # Establish a connection to the PostgreSQL database
 conn = psycopg2.connect(
     dbname=config.DATABASE,
@@ -96,3 +97,7 @@ finally:
     # Close the cursor and connection objects
     cursor.close()
     conn.close()
+
+
+
+
