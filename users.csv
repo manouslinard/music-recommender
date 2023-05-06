@@ -1,20 +1,20 @@
-username,first_name,last_name,phone
-krawson0,Kenneth,Rawson,+725-768-7890
-bhuller1,Brian,Huller,+650-237-1462
-pkaysor2,Paula,Kaysor,+218-740-7046
-hsnook3,Henry,Snook,+318-285-8205
-croostan4,Craig,Roostan,+352-756-8147
-mmerwe5,Marys,Merwe,+810-614-0838
-btonnesen6,Brandon,Tonnesen,+305-669-0579
-mhodgkin7,Martha,Hodgkin,+209-471-0798
-lbrazel8,Lisa,Brazel,+719-476-8016
-spawle9,Steve,Pawle,+401-221-0209
-ddegregorioa,David,De Gregorio,+618-478-3744
-bjukubicb,Brian,Jukubic,+847-829-3374
-pimlockc,Paul,Imlock,+559-348-1183
-srouselld,Scott,Rousell,+313-267-3569
-lthickpene,Lisa,Thickpenny,+585-563-2719
-smcgrowtherf,Stephenie,McGrowther,+843-207-3547
-mcuddyg,Michael,Cuddy,+406-460-7331
-jatleyh,Julie,Atley,+615-681-5477
-rkynastoni,Ronald,Kynaston,+915-923-5855
+username,first_name,last_name,phone,age,gender,country
+krawson0,,Rawson,+725-768-7890,12,M,Greece
+bhuller1,Brian,Huller,+650-237-1462,19,F,Greece
+pkaysor2,Paula,,+218-740-7046,,F,
+hsnook3,Henry,Snook,+318-285-8205,,M,Italy
+croostan4,Craig,Roostan,,23,,Germany
+mmerwe5,Marys,,,,F,South Africa
+btonnesen6,Brandon,Tonnesen,+305-669-0579,,M,Mexico
+mhodgkin7,Martha,Hodgkin,+209-471-0798,,F,Australia
+lbrazel8,Lisa,Brazel,+719-476-8016,35,F,Canada
+spawle9,Steve,Pawle,+401-221-0209,45,M,United Kingdom
+ddegregorioa,,De Gregorio,+618-478-3744,28,M,
+bjukubicb,Brian,Jukubic,+847-829-3374,31,,Poland
+pimlockc,Paul,Imlock,+559-348-1183,39,M,Spain
+srouselld,Scott,Rousell,+313-267-3569,42,M,France
+lthickpene,Lisa,,+585-563-2719,27,,Japan
+smcgrowtherf,Stephenie,,+843-207-3547,29,F,Brazil
+mcuddyg,Michael,Cuddy,+406-460-7331,56,M,Canada
+jatleyh,Julie,Atley,+615-681-5477,41,F,United States
+rkynastoni,Ronald,Kynaston,+915-923-5855,24,M,Mexico

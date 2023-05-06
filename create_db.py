@@ -1,6 +1,6 @@
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import csv
+import random
+import pandas as pd
+import numpy as np
 
 
 def create_tables(conn):
@@ -15,6 +15,9 @@ def create_tables(conn):
                 username VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
+                gender CHAR,
+                country VARCHAR(50),
+                age INTEGER,
                 phone VARCHAR(100) NOT NULL
             )
             """,
@@ -79,28 +82,67 @@ def create_tables(conn):
         print(f"Error: {e}")
 
 def load_users(conn):
-    try:
-        # Create a cursor object
-        cursor = conn.cursor()
+    # Create a cursor object
+    cursor = conn.cursor()
 
-        # # Open the SQL file
-        # with open('MOCK_DATA.sql', 'r') as file:
-        #     sql = file.read()
+    # Open the CSV file and read the data
+    df = pd.read_csv("users.csv")
+    if df['username'].isnull().any():
+        raise ValueError("Missing username in the CSV file.")
+    if df['age'].min() <= 10:
+        raise ValueError("Invalid age in the CSV file (users should be above 10 years old).")
+    if df['gender'].isin(['N']).any():
+        raise ValueError("Invalid gender in the CSV file (should be M or F).")
+    df['gender'].fillna("N", inplace=True)
+    if not df['gender'].isin(['M', 'F', 'N']).all():
+        raise ValueError("Invalid gender in the CSV file (should be M or F).")
+    df['age'].fillna(-1, inplace=True)
+    df.fillna("unregistered", inplace=True)
 
-        # Open the CSV file and read the data
-        with open('users.csv', 'r') as f:
-            reader = csv.reader(f)
-            next(reader) # Skip header row
-            for row in reader:
-                # Extract the values from the row
-                username, first_name, last_name, phone = row
-                # Insert the values into the users table
-                cursor.execute("INSERT INTO users (username, first_name, last_name, phone) VALUES (%s, %s, %s, %s)", (username, first_name, last_name, phone))
+    cursor.executemany("INSERT INTO users (username, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s)",
+                   [(row['username'], row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
 
-        # Commit the changes and close the connection
-        conn.commit()
+    conn.commit()
+    print("Data inserted successfully.")
 
-        print("Data inserted successfully.")
+def insert_user_has_disc(conn):
+    cur = conn.cursor()
 
-    except Exception as e:
-        print(f"Error: {e}")
+    # Select all usernames from the users table
+    cur.execute("SELECT username FROM users")
+    users = cur.fetchall()
+
+    # Select all disc names and band names from the discs table
+    cur.execute("SELECT name, band FROM discs")
+    discs = cur.fetchall()
+
+    # Insert random disc ownerships for each user
+    for user in users:
+        for i in range(random.randint(0, 5)):
+            disc = random.choice(discs)
+            insert_query = f"INSERT INTO user_has_discs VALUES ('{user[0]}', '{disc[0]}', '{disc[1]}') ON CONFLICT DO NOTHING"
+            cur.execute(insert_query)
+    print("Initialized relation user-has-disc.")
+    conn.commit()
+
+
+def insert_user_likes_band(conn):
+    cur = conn.cursor()
+
+    # Select all usernames from the users table
+    cur.execute("SELECT username FROM users")
+    users = cur.fetchall()
+
+    # Select all disc names and band names from the discs table
+    cur.execute("SELECT name FROM bands")
+    bands = cur.fetchall()
+
+    # Insert random disc ownerships for each user
+    for user in users:
+        for i in range(random.randint(0, 5)):
+            band = random.choice(bands)
+            insert_query = f"INSERT INTO user_likes_band VALUES ('{user[0]}', '{band[0]}') ON CONFLICT DO NOTHING"
+            cur.execute(insert_query)
+    print("Initialized relation user-likes-band.")
+    conn.commit()
+
