@@ -32,3 +32,7 @@ To delete created db, run:
 ```
 dropdb -h localhost -p 5432 -U postgres music_band
 ```
+
+## RUN Dockefile
+docker build -t my_project .
+docker run --rm -it --network="host" -e DB_PASSWORD=your_password my_project

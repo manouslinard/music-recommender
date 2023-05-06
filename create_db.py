@@ -4,6 +4,7 @@ import config # a separate config file with database credentials
 import csv
 
 
+
 def create_tables(conn):
     try:
         # Create a cursor object
@@ -93,5 +94,14 @@ def load_users(conn):
 
         print("Data inserted successfully.")
 
-    except Exception as e:
-        print(f"Error: {e}")
+except Exception as e:
+    print(f"Error: {e}")
+
+finally:
+    # Close the cursor and connection objects
+    cursor.close()
+    conn.close()
+
+
+
+
