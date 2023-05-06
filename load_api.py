@@ -28,7 +28,7 @@ def find_top_albums(band_name: str) -> list:
     response = requests.get(album_url)
     top_albums = json.loads(response.text)['topalbums']['album']
     for a in top_albums:
-        alb.append(a["name"])
+        alb.append(a["name"].replace("'", "_"))
     return alb
 
 def load_api():
@@ -70,6 +70,8 @@ def load_api():
 
 
     create_db.load_users(conn)
+    create_db.insert_user_has_disc(conn)
+    create_db.insert_user_likes_band(conn)
 
     # Commit the transaction and close the cursor and connection
     conn.commit()

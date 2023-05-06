@@ -1,6 +1,4 @@
-import psycopg2
-from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
-import csv
+import random
 import pandas as pd
 import numpy as np
 
@@ -106,3 +104,45 @@ def load_users(conn):
 
     conn.commit()
     print("Data inserted successfully.")
+
+def insert_user_has_disc(conn):
+    cur = conn.cursor()
+
+    # Select all usernames from the users table
+    cur.execute("SELECT username FROM users")
+    users = cur.fetchall()
+
+    # Select all disc names and band names from the discs table
+    cur.execute("SELECT name, band FROM discs")
+    discs = cur.fetchall()
+
+    # Insert random disc ownerships for each user
+    for user in users:
+        for i in range(random.randint(0, 5)):
+            disc = random.choice(discs)
+            insert_query = f"INSERT INTO user_has_discs VALUES ('{user[0]}', '{disc[0]}', '{disc[1]}') ON CONFLICT DO NOTHING"
+            cur.execute(insert_query)
+    print("Initialized relation user-has-disc.")
+    conn.commit()
+
+
+def insert_user_likes_band(conn):
+    cur = conn.cursor()
+
+    # Select all usernames from the users table
+    cur.execute("SELECT username FROM users")
+    users = cur.fetchall()
+
+    # Select all disc names and band names from the discs table
+    cur.execute("SELECT name FROM bands")
+    bands = cur.fetchall()
+
+    # Insert random disc ownerships for each user
+    for user in users:
+        for i in range(random.randint(0, 5)):
+            band = random.choice(bands)
+            insert_query = f"INSERT INTO user_likes_band VALUES ('{user[0]}', '{band[0]}') ON CONFLICT DO NOTHING"
+            cur.execute(insert_query)
+    print("Initialized relation user-likes-band.")
+    conn.commit()
+
