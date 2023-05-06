@@ -31,20 +31,37 @@ try:
         """
         CREATE TABLE IF NOT EXISTS Discs (
             name VARCHAR(50) PRIMARY KEY,
-            creation_date DATE NOT NULL,
-            price FLOAT NOT NULL,
             band VARCHAR(50) NOT NULL
         )
         """,
         """
         CREATE TABLE IF NOT EXISTS Bands (
             name VARCHAR(50) PRIMARY KEY,
-            creation_date DATE,
             summary VARCHAR(10000)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS user_has_discs (
+            username VARCHAR(50),
+            name_of_discs VARCHAR(50),
+            CONSTRAINT pk_user_has_discs PRIMARY KEY (username, name_of_discs)
+        )
+        """,
+        """
+        CREATE TABLE IF NOT EXISTS user_likes_band (
+            username VARCHAR(50),
+            band_name VARCHAR(50),
+            CONSTRAINT pk_user_likes_band PRIMARY KEY (username, band_name)
         )
         """
     )
-
+    foreign_keys = """
+    ALTER TABLE Discs
+    ADD CONSTRAINT fk_band
+    FOREIGN KEY (band) REFERENCES Bands(name);
+    """
+    
+    # Execute the CREATE TABLE commands
     for command in create_table_commands:
         cursor.execute(command)
 
@@ -61,7 +78,15 @@ try:
     # Commit the changes to the database
     conn.commit()
 
+    # Execute the ALTER TABLE command to add foreign key constraint
+    cursor.execute(foreign_keys)
+
+    # Commit the changes to the database
+    conn.commit()
+
     print("Data inserted successfully.")
+    print("Foreign key added successfully.")
+
 
 except Exception as e:
     print(f"Error: {e}")
