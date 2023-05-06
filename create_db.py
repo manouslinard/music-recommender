@@ -15,7 +15,7 @@ def create_tables(conn):
                 username VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
-                phone VARCHAR(100) CHECK (phone ~ '^\\+?[0-9]{1,3}-?[0-9]{3}-?[0-9]{3}-?[0-9]{4}$')
+                phone VARCHAR(100) NOT NULL
             )
             """,
             """
