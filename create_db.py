@@ -15,15 +15,14 @@ def create_tables(conn):
                 username VARCHAR(50) PRIMARY KEY,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
-                phone VARCHAR(100)
+                phone VARCHAR(100) CHECK (phone ~ '^\\+?[0-9]{1,3}-?[0-9]{3}-?[0-9]{3}-?[0-9]{4}$')
             )
             """,
             """
-            CREATE TABLE IF NOT EXISTS Users (
-                username VARCHAR(50) PRIMARY KEY,
-                first_name VARCHAR(50) NOT NULL,
-                last_name VARCHAR(50) NOT NULL,
-                phone VARCHAR(100) CHECK (phone ~ '^\\+?[0-9]{1,3}-?[0-9]{3}-?[0-9]{3}-?[0-9]{4}$')
+            CREATE TABLE IF NOT EXISTS Discs (
+            name VARCHAR(250) NOT NULL,
+            band VARCHAR(50) NOT NULL,
+            PRIMARY KEY (name, band)
             )
             """,
             """
