@@ -1,12 +1,15 @@
 import requests
 import json
 import re
-import config
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import create_db
+from dotenv import load_dotenv
+import os
 
-YOUR_API_KEY = config.YOUR_API_KEY
+load_dotenv()
+
+YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
 band_names = ["coldplay", "the+beatles", "queen", "acdc", "u2"]
 
@@ -28,46 +31,51 @@ def find_top_albums(band_name: str) -> list:
         alb.append(a["name"])
     return alb
 
-albums_bands = []
-for b in band_names:
-    r = find_info_band(b)
-    a = find_top_albums(b)
-    r["albums"] = a
-    albums_bands.append(r)
+def load_api():
 
-# Connect to PostgreSQL database
-conn = psycopg2.connect(
-    host=config.HOST,
-    database=config.DATABASE,
-    user=config.USERNAME,
-    password=config.PASSWORD
-)
+    albums_bands = []
+    for b in band_names:
+        r = find_info_band(b)
+        a = find_top_albums(b)
+        r["albums"] = a
+        albums_bands.append(r)
 
-# Set isolation level to AUTOCOMMIT
-conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
+    # Connect to PostgreSQL database
+    conn = psycopg2.connect(
+        host=os.getenv("PSQL_HOST"),
+        database=os.getenv("PSQL_DATABASE"),
+        user=os.getenv("PSQL_USERNAME"),
+        password=os.getenv("PSQL_PASSWORD")
+    )
 
-create_db.create_tables(conn)
+    # Set isolation level to AUTOCOMMIT
+    conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
-# Open a cursor to perform database operations
-cur = conn.cursor()
+    create_db.create_tables(conn)
 
-# Iterate through the data and insert each item into the PostgreSQL table
-for item in albums_bands:
-    name = item['name']
-    summary = item['summary'].replace('\n', ' ')
-    # summary = "hello"
-    albums = item['albums']
-    cur.execute("INSERT INTO Bands (name, summary) VALUES (%s, %s)", (name, summary))
-    for a in albums:
-        if a != "(null)":
-            cur.execute("INSERT INTO Discs (name, band) VALUES (%s, %s)", (a, name))
+    # Open a cursor to perform database operations
+    cur = conn.cursor()
+
+    # Iterate through the data and insert each item into the PostgreSQL table
+    for item in albums_bands:
+        name = item['name']
+        summary = item['summary'].replace('\n', ' ')
+        # summary = "hello"
+        albums = item['albums']
+        cur.execute("INSERT INTO Bands (name, summary) VALUES (%s, %s)", (name, summary))
+        for a in albums:
+            if a != "(null)":
+                cur.execute("INSERT INTO Discs (name, band) VALUES (%s, %s)", (a, name))
 
 
-create_db.load_users(conn)
+    create_db.load_users(conn)
 
-# Commit the transaction and close the cursor and connection
-conn.commit()
-cur.close()
-conn.close()
+    # Commit the transaction and close the cursor and connection
+    conn.commit()
+    cur.close()
+    conn.close()
 
-# print(r)
+    # print(r)
+
+if __name__ == "__main__":
+    load_api()
