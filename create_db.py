@@ -30,14 +30,15 @@ try:
         """,
         """
         CREATE TABLE IF NOT EXISTS Discs (
-            name VARCHAR(50) PRIMARY KEY,
-            band VARCHAR(50) NOT NULL
+            name VARCHAR(250) NOT NULL,
+            band VARCHAR(50) NOT NULL,
+            PRIMARY KEY (name, band)
         )
         """,
         """
         CREATE TABLE IF NOT EXISTS Bands (
             name VARCHAR(50) PRIMARY KEY,
-            summary VARCHAR(10000)
+            summary TEXT
         )
         """,
         """
