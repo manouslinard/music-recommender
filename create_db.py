@@ -1,6 +1,8 @@
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import csv
+import pandas as pd
+import numpy as np
 
 
 def create_tables(conn):
@@ -79,28 +81,19 @@ def create_tables(conn):
         print(f"Error: {e}")
 
 def load_users(conn):
-    try:
-        # Create a cursor object
-        cursor = conn.cursor()
+    # Create a cursor object
+    cursor = conn.cursor()
 
-        # # Open the SQL file
-        # with open('MOCK_DATA.sql', 'r') as file:
-        #     sql = file.read()
-
-        # Open the CSV file and read the data
-        with open('users.csv', 'r') as f:
-            reader = csv.reader(f)
-            next(reader) # Skip header row
-            for row in reader:
-                # Extract the values from the row
-                username, first_name, last_name, phone = row
-                # Insert the values into the users table
-                cursor.execute("INSERT INTO users (username, first_name, last_name, phone) VALUES (%s, %s, %s, %s)", (username, first_name, last_name, phone))
-
-        # Commit the changes and close the connection
-        conn.commit()
-
-        print("Data inserted successfully.")
-
-    except Exception as e:
-        print(f"Error: {e}")
+    # Open the CSV file and read the data
+    df = pd.read_csv("users.csv")
+    if df['username'].isnull().any():
+        raise ValueError("Missing username in the CSV file.")
+    df.fillna("unregistered", inplace=True)
+    
+    # Iterate over the rows of the DataFrame and insert each row into the 'users' table
+    for index, row in df.iterrows():
+        cursor.execute("INSERT INTO users (username, first_name, last_name, phone) VALUES (%s, %s, %s, %s)",
+                   (row['username'], row['first_name'], row['last_name'], row['phone']))
+    # Commit the changes and close the connection
+    conn.commit()
+    print("Data inserted successfully.")

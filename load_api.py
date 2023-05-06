@@ -52,6 +52,7 @@ def load_api():
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
     create_db.create_tables(conn)
+    
 
     # Open a cursor to perform database operations
     cur = conn.cursor()
