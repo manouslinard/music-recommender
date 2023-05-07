@@ -3,3 +3,5 @@ requests
 python-dotenv
 numpy
 pandas
+networkx
+matplotlib

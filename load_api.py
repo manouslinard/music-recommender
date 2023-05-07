@@ -70,6 +70,7 @@ def load_api():
 
 
     create_db.load_users(conn)
+    create_db.fill_barabasi_model(conn)
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
 

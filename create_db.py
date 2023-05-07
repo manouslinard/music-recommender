@@ -1,7 +1,8 @@
 import random
 import pandas as pd
 import numpy as np
-
+import networkx as nx
+import matplotlib.pyplot as plt
 
 def create_tables(conn):
     try:
@@ -56,6 +57,15 @@ def create_tables(conn):
                     REFERENCES users (username),
                 CONSTRAINT fk_user_likes_band_name FOREIGN KEY (band_name)
                     REFERENCES Bands (name)
+            )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS User_Friends (
+                username VARCHAR(50) NOT NULL,
+                friend_username VARCHAR(50) NOT NULL,
+                PRIMARY KEY (username, friend_username),
+                FOREIGN KEY (username) REFERENCES Users (username),
+                FOREIGN KEY (friend_username) REFERENCES Users (username)
             )
             """
         )
@@ -146,3 +156,37 @@ def insert_user_likes_band(conn):
     print("Initialized relation user-likes-band.")
     conn.commit()
 
+def fill_barabasi_model(conn, m=3):
+    """
+    Define the parameters of the Barabási-Albert model.
+    Parameters: m -> number of edges to attach from a new node to existing nodes
+    """
+    # create a cursor object
+    cur = conn.cursor()
+    # Get the usernames from the database and saves them to a list.
+    cur.execute("SELECT username FROM Users")
+    usernames = [row[0] for row in cur.fetchall()]
+    n = len(usernames)  # number of nodes in barabasi model.
+    # print(n)
+    # generate the graph
+    community_graph = nx.barabasi_albert_graph(n, m)
+
+    mapping = {}
+    # maps nodes to usernames.
+    for node, u in zip(community_graph, usernames):
+        mapping[node] = u
+    # DEBUG =================================================
+    # print(mapping)
+    # print("=============")
+    # print(community_graph.edges)
+    # nx.draw(community_graph, with_labels=True)
+    # plt.show()
+    # ======================================================
+    # Insert the edges into the User_Friends table
+    for edge in community_graph.edges:
+        user1 = mapping[edge[0]]
+        user2 = mapping[edge[1]]
+        cur.execute("INSERT INTO User_Friends (username, friend_username) VALUES (%s, %s)", (user1, user2))
+    print("Filled User-Friends Table according to Barabasi Model.")
+    # Commit the changes to the database
+    conn.commit()
