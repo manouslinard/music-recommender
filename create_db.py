@@ -190,3 +190,6 @@ def fill_barabasi_model(conn, m=3):
     print("Filled User-Friends Table according to Barabasi Model.")
     # Commit the changes to the database
     conn.commit()
+
+if __name__ == "__main__":
+    print("This file is not executable and contains methods used in load_api.py. To run the project, run the load_api.py file.")

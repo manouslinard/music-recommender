@@ -31,7 +31,10 @@ PSQL_HOST=localhost
 PSQL_PORT=5432
 PSQL_DATABASE=music_band
 YOUR_API_KEY=YOUR_API_KEY
+LOAD_DATA=1
 ```
+If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
+
 ---
 ## Users.csv file:
 In the users.csv file you can put the users of the project. Some users have also null attributes to test the handling of the NaN values. Users should always have a username.
@@ -46,6 +49,12 @@ To delete created db, run:
 ```
 dropdb -h localhost -p 5432 -U postgres music_band
 ```
+For an easy restart of the database, just run:
+```
+python3 reset_db.py
+```
+This will drop and recreate the database tables.
+
 ---
 ## Run App locally:
 To run the app, run:

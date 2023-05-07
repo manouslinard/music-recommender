@@ -12,7 +12,7 @@ COPY .env .
 COPY users.csv .
 COPY create_db.py .
 COPY load_api.py .
-COPY my_script.py .
+COPY reset_db.py .
 
 
-CMD ["python", "my_script.py"]
+CMD ["python", "reset_db.py"]
