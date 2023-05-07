@@ -15,7 +15,7 @@ source env/bin/activate
 ```
 Once you activated the venv, you can install the requirements of the app like so (from project directory):
 ```
-pip install -r puddle/requirements.txt
+pip install -r requirements.txt
 ```
 If you want to delete the venv, run:
 ```
@@ -39,13 +39,20 @@ To create required db, run:
 ```
 createdb -h localhost -p 5432 -U postgres music_band
 ```
-It is also important to set the postgres user's password to 'pass123' for django app to work.<br>
 To delete created db, run:
 ```
 dropdb -h localhost -p 5432 -U postgres music_band
 ```
 ---
-## RUN Dockefile
+## Run App locally:
+To run the app, run:
+```
+python3 load_api.py
+```
+It is recommended to restart the database first (follow psql local config section).
+
+---
+## Run Dockerfile
 Build the image:
 ```
 docker build --no-cache -t music-recommender .
