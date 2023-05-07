@@ -11,7 +11,7 @@ load_dotenv()
 
 YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
-band_names = ["coldplay", "the+beatles", "queen", "acdc", "u2"]
+band_names = ["coldplay", "scorpions", "the+beatles", "queen", "acdc", "u2"]
 
 def find_info_band(band_name: str) -> dict:
     band_url = f"http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={band_name}&api_key={YOUR_API_KEY}&format=json"
@@ -33,6 +33,7 @@ def find_top_albums(band_name: str) -> list:
 
 def load_api():
 
+    print("Collecting requested band data...")
     albums_bands = []
     for b in band_names:
         r = find_info_band(b)
@@ -52,7 +53,6 @@ def load_api():
     conn.set_isolation_level(ISOLATION_LEVEL_AUTOCOMMIT)
 
     create_db.create_tables(conn)
-    
 
     # Open a cursor to perform database operations
     cur = conn.cursor()

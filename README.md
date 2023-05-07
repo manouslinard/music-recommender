@@ -32,6 +32,9 @@ PSQL_PORT=5432
 PSQL_DATABASE=music_band
 YOUR_API_KEY=YOUR_API_KEY
 ```
+---
+## Users.csv file:
+In the users.csv file you can put the users of the project. Some users have also null attributes to test the handling of the NaN values. Users should always have a username.
 
 ---
 ## Psql Local Config:
