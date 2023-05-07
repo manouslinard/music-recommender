@@ -67,6 +67,16 @@ def create_tables(conn):
                 FOREIGN KEY (username) REFERENCES Users (username),
                 FOREIGN KEY (friend_username) REFERENCES Users (username)
             )
+            """,
+            
+            """
+            CREATE TABLE IF NOT EXISTS disc_prices (
+                date DATE NOT NULL,
+                values FLOAT,
+                name VARCHAR(250) NOT NULL,
+                band VARCHAR(50) NOT NULL,
+                FOREIGN KEY (name,band) REFERENCES Discs (name,band)
+            )
             """
         )
         foreign_keys = """
@@ -116,6 +126,35 @@ def load_users(conn):
 
     conn.commit()
     print("Data inserted successfully.")
+
+
+def load_prices(conn):
+    cursor = conn.cursor()
+    cursor.execute("SELECT name, band FROM discs")
+    discs = cursor.fetchall()
+
+    for disc in discs:
+        name, band = disc
+        df = pd.read_csv("File_series.csv")
+        df['date'] = pd.to_datetime(df['date'])
+        
+        # fill missing dates with the previous date + 1
+        df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
+
+
+        # fill missing values with rolling mean and forward fill
+        df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
+        df['values'] = df['values'].ffill()
+
+        # insert the data into the 'disc_prices' table
+        for row in df.itertuples(index=False):
+            cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name, band))
+
+    conn.commit()
+    print("Prices inserted successfully.")
+
+
+
 
 def insert_user_has_disc(conn):
     cur = conn.cursor()
