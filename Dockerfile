@@ -13,6 +13,7 @@ COPY users.csv .
 COPY create_db.py .
 COPY load_api.py .
 COPY reset_db.py .
+COPY File_series.csv .
 
 
 CMD ["python", "reset_db.py"]

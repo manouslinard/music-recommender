@@ -12,6 +12,7 @@ load_dotenv()
 YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
 band_names = ["coldplay", "scorpions", "the+beatles", "queen", "acdc", "u2"]
+# "scorpions", "the+beatles", "queen", "acdc", "u2"
 
 def find_info_band(band_name: str) -> dict:
     band_url = f"http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={band_name}&api_key={YOUR_API_KEY}&format=json"
@@ -73,6 +74,11 @@ def load_api():
     create_db.fill_barabasi_model(conn)
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
+    if bool(int(os.environ.get('LOAD_PRICES', 0))):
+        create_db.load_prices(conn)
+    else:
+        print("Prices not inserted.")
+
 
     # Commit the transaction and close the cursor and connection
     conn.commit()
