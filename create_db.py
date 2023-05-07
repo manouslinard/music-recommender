@@ -101,6 +101,8 @@ def load_users(conn):
         raise ValueError("Missing username in the CSV file.")
     if df['age'].min() <= 10:
         raise ValueError("Invalid age in the CSV file (users should be above 10 years old).")
+    if df['age'].max() > 110:
+        raise ValueError("Invalid age in the CSV file (user aged over 110 years old).")
     if df['gender'].isin(['N']).any():
         raise ValueError("Invalid gender in the CSV file (should be M or F).")
     df['gender'].fillna("N", inplace=True)
