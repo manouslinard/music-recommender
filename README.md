@@ -32,8 +32,11 @@ PSQL_PORT=5432
 PSQL_DATABASE=music_band
 YOUR_API_KEY=YOUR_API_KEY
 LOAD_DATA=1
+LOAD_PRICES=0
 ```
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
+<br>
+If you want to load the prices of csv file, set LOAD_PRICES=1 (it is recommended to do this with not a lot of bands, which are declared in the top of load_api.py).
 
 ---
 ## Users.csv file:
@@ -62,6 +65,12 @@ To run the app, run:
 python3 load_api.py
 ```
 It is recommended to restart the database first (follow psql local config section).
+<br>
+To show the stats - graphs, run:
+
+```
+python3 stats.py
+```
 
 ---
 ## Run Dockerfile

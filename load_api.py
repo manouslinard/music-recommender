@@ -74,7 +74,11 @@ def load_api():
     create_db.fill_barabasi_model(conn)
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
-    create_db.load_prices(conn)
+    if bool(int(os.environ.get('LOAD_PRICES', 0))):
+        create_db.load_prices(conn)
+    else:
+        print("Prices not inserted.")
+
 
     # Commit the transaction and close the cursor and connection
     conn.commit()
