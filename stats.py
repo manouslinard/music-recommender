@@ -1,7 +1,8 @@
-import pandas as pd
 import psycopg2
 import os
 from dotenv import load_dotenv
+import matplotlib.pyplot as plt
+from load_api import band_names
 
 # DELETE WHEN DONE ================================
 load_dotenv()
@@ -240,14 +241,179 @@ def most_listened_bands_by_country(conn):
 
     return {country: data for country, data in most_listened.items() if data[0] != 'unregistered'}
 
-print(avg_user_band_age(conn, "scorpions"))
-print(countries_most_music(conn))
-print(band_most_listeners(conn, "scorpions"))
-print(band_most_gender(conn, "scorpions"))
-print(band_with_most_listeners(conn))
-print(avg_disc_count(conn))
-print(band_users_by_country(conn, "scorpions"))
-print(disc_users_country(conn, "Anthology 3"))
-print(num_users_with_disc(conn, "Anthology 3"))
-print(disc_most_gender(conn, "Anthology 3"))
-print(most_listened_bands_by_country(conn))
+# Q12
+def top_x_discs_by_quantity(conn, x=5):
+    """
+    Returns a list of the top discs in quantity that the users have.
+    """
+    query = f"""
+        SELECT disc_name, disc_band, COUNT(*) AS num_users
+        FROM user_has_discs
+        GROUP BY disc_name, disc_band
+        ORDER BY num_users DESC
+        LIMIT {x};
+        """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        results = cur.fetchall()
+
+    top_x_discs = []
+    for row in results:
+        disc_name, disc_band, num_users = row
+        top_x_discs.append((disc_name, disc_band, num_users))
+
+    return top_x_discs
+
+
+# print(avg_user_band_age(conn, "scorpions"))
+# print(countries_most_music(conn))
+# print(band_most_listeners(conn, "scorpions"))
+# print(band_most_gender(conn, "scorpions"))
+# print(band_with_most_listeners(conn))
+# print(avg_disc_count(conn))
+# print(band_users_by_country(conn, "scorpions"))
+# print(disc_users_country(conn, "Anthology 3"))
+# print(num_users_with_disc(conn, "Anthology 3"))
+# print(disc_most_gender(conn, "Anthology 3"))
+# print(most_listened_bands_by_country(conn))
+# print(top_x_discs_by_quantity(conn))
+
+# ==================================== PLOT =====================
+
+
+def plot_avg_user_band_age(conn, band_names):
+    """
+    Plots the average age of users for a list of bands.
+    """
+    avg_ages = []
+    band_names_copy = []
+    for band_name in band_names:
+        b_name = band_name.replace("+", " ")
+        band_names_copy.append(b_name)
+        avg_age = avg_user_band_age(conn, b_name)
+        avg_ages.append(avg_age)
+
+    # Create the bar plot
+    fig, ax = plt.subplots()
+    ax.bar(band_names_copy, avg_ages)
+    ax.set_xlabel('Band Name')
+    ax.set_ylabel('Average Age')
+    ax.set_title('Average Age of Users by Band')
+    plt.show()
+
+def plot_countries_most_music(conn):
+    """
+    Plots a line chart with the number of users per country.
+    """
+    country_dict = countries_most_music(conn)
+    countries = list(country_dict.keys())
+    users = list(country_dict.values())
+
+    plt.plot(countries, users, marker='o')
+    plt.xticks(rotation=90)
+    plt.xlabel("Country")
+    plt.ylabel("Number of users")
+    plt.title("Number of users per country")
+    plt.show()
+
+def plot_top_x_discs_by_quantity(conn, x=5):
+    """
+    Generates a pie chart of the top X discs in quantity that the users have.
+    """
+    top_x_discs = top_x_discs_by_quantity(conn, x)
+
+    labels = [f"{disc_name} by {disc_band} ({num_users})" for disc_name, disc_band, num_users in top_x_discs]
+    values = [num_users for disc_name, disc_band, num_users in top_x_discs]
+
+    fig, ax = plt.subplots()
+    ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=90)
+
+    # Add title and legend
+    ax.set_title(f'Top {x} Discs by Quantity')
+    # ax.legend(labels, loc='upper right')
+
+    plt.show()
+
+def plot_disc_gender_distribution(conn, x=5):
+    """
+    Generates a bar chart showing the gender distribution of the users who have the top x discs by quantity.
+    """
+    top_discs = top_x_discs_by_quantity(conn, x)
+    disc_names = [d[0] for d in top_discs]
+    gender_counts = []
+    for disc_name in disc_names:
+        gender_counts.append((disc_name, disc_most_gender(conn, disc_name)))
+
+    # Filter out any discs with no gender data
+    gender_counts = [g for g in gender_counts if g[1] is not None]
+
+    # Count the number of users for each gender
+    gender_totals = {'M': 0, 'F': 0}
+    for disc_name, gender in gender_counts:
+        gender_totals[gender] += 1
+
+    # Create the bar chart
+    fig, ax = plt.subplots()
+    ax.bar(gender_totals.keys(), gender_totals.values())
+    ax.set_xlabel('Gender')
+    ax.set_ylabel('Number of Users')
+    ax.set_title(f'Gender Distribution of Users with Top {x} Discs by Quantity')
+
+    plt.show()
+
+def plot_users_by_gender(conn):
+    """
+    Plots a bar chart with the number of users per gender.
+    """
+    query = """
+        SELECT gender, COUNT(*) AS num_users
+        FROM Users
+        GROUP BY gender;
+        """
+    with conn.cursor() as cur:
+        cur.execute(query)
+        results = cur.fetchall()
+
+    genders = ["Unknown" if row[0]=="N" else row[0] for row in results]
+    num_users = [row[1] for row in results]
+
+    plt.bar(genders, num_users)
+    plt.xlabel("Gender")
+    plt.ylabel("Number of users")
+    plt.title("Number of users per gender")
+    plt.show()
+
+def plot_user_age(conn):
+    """
+    Plots a line chart with the age distribution of all users.
+    """
+    sql = "SELECT age FROM Users WHERE age IS NOT NULL;"
+    with conn.cursor() as cur:
+        cur.execute(sql)
+        ages = [row[0] for row in cur.fetchall()]
+
+    # Count the number of users in each age group
+    age_counts = {}
+    for age in ages:
+        if age not in age_counts:
+            age_counts[age] = 1
+        else:
+            age_counts[age] += 1
+
+    # Sort the age groups by age
+    age_groups = sorted(age_counts.keys())
+
+    # Plot the line chart
+    plt.plot(age_groups, [age_counts[age] for age in age_groups])
+    plt.xlabel("Age")
+    plt.ylabel("Number of users")
+    plt.title("Age Distribution of Users")
+    plt.show()
+
+
+plot_avg_user_band_age(conn, band_names)
+plot_countries_most_music(conn)
+plot_top_x_discs_by_quantity(conn)
+plot_disc_gender_distribution(conn)
+plot_users_by_gender(conn)
+plot_user_age(conn)
