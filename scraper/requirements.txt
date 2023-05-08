@@ -1,7 +1,4 @@
 pandas
 selenium
 webdriver-manager
-db-sqlite3
 beautifulsoup4
-lxml
-requests
