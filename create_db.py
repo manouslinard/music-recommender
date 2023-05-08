@@ -132,15 +132,15 @@ def load_prices(conn):
     cursor = conn.cursor()
     cursor.execute("SELECT name, band FROM discs")
     discs = cursor.fetchall()
+    df = pd.DataFrame(discs, columns=['name', 'band'])
 
     for disc in discs:
         name, band = disc
         df = pd.read_csv("File_series.csv")
         df['date'] = pd.to_datetime(df['date'])
-        
+
         # fill missing dates with the previous date + 1
         df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
-
 
         # fill missing values with rolling mean and forward fill
         df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
@@ -152,6 +152,7 @@ def load_prices(conn):
 
     conn.commit()
     print("Prices inserted successfully.")
+
 
 
 
