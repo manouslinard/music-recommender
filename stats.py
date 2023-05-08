@@ -30,6 +30,7 @@ def ARIMA_train(series,discname,band):
     scores = []
     all_predictions = []
     actual_values = []
+    rmsel = []
     for p in persistence_values:
         # walk-forward validation
         history = [x for x in train]
@@ -43,12 +44,13 @@ def ARIMA_train(series,discname,band):
             history.append(obs)
             # report performance for current timestep only
             rmse = sqrt(mean_squared_error([obs], [yhat]))
+            rmsel.append(rmse)
             scores.append(rmse)
             print('p=%d, t=%d, predicted=%f, expected=%f, RMSE:%.3f' % (p, t, yhat, obs, rmse))
         all_predictions.append(predictions)
         actual_values.append(test)
 
-    return all_predictions, actual_values, persistence_values
+    return all_predictions, actual_values, persistence_values 
 
 # Q1
 def avg_user_band_age(conn, band_name):

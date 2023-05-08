@@ -133,11 +133,27 @@ def load_prices(conn):
     cursor.execute("SELECT name, band FROM discs")
     discs = cursor.fetchall()
     df = pd.DataFrame(discs, columns=['name', 'band'])
+    # Open the CSV file and read the data
+    df = pd.read_csv("File_series.csv")
+
+    # Convert the date column to datetime
+    df['date'] = pd.to_datetime(df['date'])
+
+    # Get the index of the row with the minimum date
+    min_date_index = df['date'].idxmin()
+
+    # Get the values of the row with the minimum date
+    min_date_values = df.iloc[min_date_index]['date']
 
     for disc in discs:
         name, band = disc
         df = pd.read_csv("File_series.csv")
         df['date'] = pd.to_datetime(df['date'])
+        df['date'] = pd.to_datetime(df['date'])
+    
+        # if the first date is missing, replace it with the earliest date from the database
+        if pd.isna(df['date'][0]):
+            df.loc[0, 'date'] = min_date_values - pd.Timedelta(min_date_index, unit='D')
 
         # fill missing dates with the previous date + 1
         df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
