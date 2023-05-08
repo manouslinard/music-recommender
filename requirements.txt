@@ -7,3 +7,6 @@ networkx
 matplotlib
 scikit-learn
 statsmodels
+selenium
+webdriver-manager
+beautifulsoup4
