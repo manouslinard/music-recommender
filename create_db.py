@@ -25,7 +25,8 @@ def create_tables(conn):
             """
             CREATE TABLE IF NOT EXISTS Bands (
                 name VARCHAR(50) PRIMARY KEY,
-                summary TEXT
+                summary TEXT,
+                band_id INTEGER
             )
             """,
             """
@@ -188,8 +189,8 @@ def insert_user_has_disc(conn):
     for user in users:
         for i in range(random.randint(0, 5)):
             disc = random.choice(discs)
-            insert_query = f"INSERT INTO user_has_discs VALUES ('{user[0]}', '{disc[0]}', '{disc[1]}') ON CONFLICT DO NOTHING"
-            cur.execute(insert_query)
+            insert_query = "INSERT INTO user_has_discs VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"
+            cur.execute(insert_query, (user[0], disc[0], disc[1]))
     print("Initialized relation user-has-disc.")
     conn.commit()
 

@@ -33,6 +33,8 @@ PSQL_DATABASE=music_band
 YOUR_API_KEY=YOUR_API_KEY
 LOAD_DATA=1
 LOAD_PRICES=0
+DISCOGS_KEY=YOUR_DISCOGS_KEY
+DISCOGS_SECRET=YOUR_DISCOGS_SECRET
 ```
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
 <br>
