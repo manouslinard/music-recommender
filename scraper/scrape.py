@@ -13,6 +13,8 @@ import pandas as pd
 
 artist_name = "Queen"
 disc_name = "Jazz"
+MAX_PAGES = 10
+
 
 # create Chrome options (no tab):
 options = Options()
@@ -65,7 +67,7 @@ else:
 visited = []
 data = []
 
-for n in range(1, 3):
+for n in range(1, MAX_PAGES):
     print(f"Page number: {n}")
     driver.get(albums[disc_name]+f"&page={n}")
     html = driver.page_source
@@ -82,7 +84,12 @@ for n in range(1, 3):
             # albums[disc_name]["view_url"].append(discogs_url+buy_link)
         albums_buy_url[disc_name] = buy_url
     else:
-        print("Disc not found.")
+        if n > 1:
+            print(f"Reached max available page number ({n-1})")
+        else:
+            print("Disc not found.")
+        break
+
 
     # print(albums_buy_url[disc_name])
     for buy_u in albums_buy_url[disc_name]:
@@ -138,7 +145,7 @@ grouped[["lowest_price", "median_price", "highest_price"]] = grouped[["lowest_pr
 # Convert the DataFrame back to a list of dictionaries
 data = grouped.to_dict("records")
 
-
+print("Writing data to csv...")
 # write the data to a CSV file
 with open('data.csv', 'w', newline='') as csvfile:
     fieldnames = ['date', 'lowest_price', 'median_price', 'highest_price']
@@ -147,3 +154,5 @@ with open('data.csv', 'w', newline='') as csvfile:
     writer.writeheader()
     for d in data:
         writer.writerow(d)
+
+print(f"Prices for disc {disc_name} of band {artist_name} saved.")
