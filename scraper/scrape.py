@@ -9,21 +9,27 @@ from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
 import csv
 import pandas as pd
+from webdriver_manager.firefox import GeckoDriverManager
 
 
 artist_name = "Queen"
 disc_name = "Jazz"
 MAX_PAGES = 10
 
-
 # create Chrome options (no tab):
-options = Options()
-options.add_argument('--headless')  # remove this if you want the browser to appear.
-# create Chrome service - installs chrome driver:
-service = Service(ChromeDriverManager().install())
-# initialise driver:
-driver = webdriver.Chrome(service=service, options=options)
-# go to url:
+try:
+    options = Options()
+    options.add_argument('--headless')  # remove this if you want the browser to appear.
+    # create Chrome service - installs chrome driver:
+    service = Service(ChromeDriverManager().install())
+    # initialise driver:
+    driver = webdriver.Chrome(service=service, options=options)
+except: # starts firefox    
+    options = webdriver.FirefoxOptions()
+    options.add_argument('--headless')  # remove this if you want the browser to appear.
+    service = webdriver.firefox.service.Service(executable_path=GeckoDriverManager().install())
+    driver = webdriver.Firefox(service=service, options=options)# go to url:
+
 discogs_url = "https://www.discogs.com"
 
 page_url = discogs_url+"/artist/"+artist_name
