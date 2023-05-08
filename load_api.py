@@ -11,7 +11,7 @@ load_dotenv()
 
 YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
-band_names = ["coldplay", "scorpions", "the+beatles", "queen", "acdc", "u2"]
+band_names = ["the+beatles"]
 # "scorpions", "the+beatles", "queen", "acdc", "u2"
 
 def find_info_band(band_name: str) -> dict:

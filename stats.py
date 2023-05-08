@@ -1,8 +1,14 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+from numpy import median
+import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from load_api import band_names
+import pandas as pd
+import numpy as np
 
 # DELETE WHEN DONE ================================
 load_dotenv()
@@ -14,6 +20,37 @@ conn = psycopg2.connect(
     password=os.getenv("PSQL_PASSWORD")
 )
 # =================================================
+
+def ARIMA_train(series,discname,band):
+    # prepare data
+    X = series.values
+    train, test = X[0:-24], X[-24:]
+
+    persistence_values = range(1, 25)
+    scores = []
+    all_predictions = []
+    actual_values = []
+    rmsel = []
+    for p in persistence_values:
+        # walk-forward validation
+        history = [x for x in train]
+        predictions = list()
+        for t in range(len(test)):
+            # make prediction
+            yhat = history[-p]
+            predictions.append(yhat)
+            # observation
+            obs = test[t]
+            history.append(obs)
+            # report performance for current timestep only
+            rmse = sqrt(mean_squared_error([obs], [yhat]))
+            rmsel.append(rmse)
+            scores.append(rmse)
+            print('p=%d, t=%d, predicted=%f, expected=%f, RMSE:%.3f' % (p, t, yhat, obs, rmse))
+        all_predictions.append(predictions)
+        actual_values.append(test)
+
+    return all_predictions, actual_values, persistence_values 
 
 # Q1
 def avg_user_band_age(conn, band_name):
@@ -67,7 +104,7 @@ def band_most_listeners(conn, band_name):
         JOIN user_likes_band ON users.username = user_likes_band.username
         WHERE LOWER(band_name) = LOWER(%s) AND country != 'unregistered'
         GROUP BY country
-        ORDER BY user_count DESC
+        ORDER BY user_count DESC`
         LIMIT 1
     """
     cur.execute(query, (band_name,))
@@ -410,10 +447,38 @@ def plot_user_age(conn):
     plt.title("Age Distribution of Users")
     plt.show()
 
+def plot_time_series(conn, discname, band):
+    # generate a new time series for this disc
+    sql = f"SELECT date,values FROM disc_prices as d WHERE d.band='{band}' and d.name='{discname}'"
+    df = pd.read_sql_query(sql, conn)
+    if df.empty:
+        print(f"No results found for disc '{discname}' by band '{band}'.")
+        return
+    date_rng = pd.date_range(start=df['date'].iloc[0], end=df['date'].iloc[-1], freq='D')
+    val = 40 + 15 * np.tile(np.sin(np.linspace(-np.pi, np.pi, 365)), 5)
+    val = np.append(val, val[1824]) + 5 * np.random.rand(1826)
+    series = pd.DataFrame({'values': val}, index=pd.DatetimeIndex(date_rng))
+    ax = series.plot()
+    ax.set_title(f"{discname} by {band}")
+    plt.show()
 
-plot_avg_user_band_age(conn, band_names)
-plot_countries_most_music(conn)
-plot_top_x_discs_by_quantity(conn)
-plot_disc_gender_distribution(conn)
-plot_users_by_gender(conn)
-plot_user_age(conn)
+    # train the ARIMA model and get predictions and actual values
+    all_predictions, actual_values, persistence_values = ARIMA_train(series, discname, band)
+
+    # plot the actual vs. predicted values for the last persistence value
+    plt.plot(actual_values[-1], label='actual')
+    plt.plot(all_predictions[-1], label='predicted')
+    plt.legend()
+    plt.title(f"Actual vs. Predicted for {discname} by {band} (p={persistence_values[-1]})")
+    plt.show()
+
+
+
+
+# plot_avg_user_band_age(conn, band_names)
+# plot_countries_most_music(conn)
+# plot_top_x_discs_by_quantity(conn)
+# plot_disc_gender_distribution(conn)
+# plot_users_by_gender(conn)
+# plot_user_age(conn)
+plot_time_series(conn,"Let It Be","The Beatles")
