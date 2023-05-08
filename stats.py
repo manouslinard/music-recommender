@@ -1,6 +1,10 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
+from sklearn.metrics import mean_squared_error
+from math import sqrt
+from numpy import median
+import statsmodels.api as sm
 import matplotlib.pyplot as plt
 from load_api import band_names
 import pandas as pd
@@ -425,9 +429,30 @@ def plot_time_series(conn, discname, band):
     series = pd.DataFrame({'values': val}, index=pd.DatetimeIndex(date_rng))
     ax = series.plot()
     ax.set_title(f"{discname} by {band}")
-    #series.plot()
-    plt.show()
+    #plt.show()
 
+    
+    # prepare data
+    X = series.values
+    train, test = X[0:-24], X[-24:]
+
+    persistence_values = range(1, 25)
+    scores = []
+    for p in persistence_values:
+        # walk-forward validation
+        history = [x for x in train]
+        predictions = list()
+        for t in range(len(test)):
+            # make prediction
+            yhat = history[-p]
+            predictions.append(yhat)
+            # observation
+            obs = test[t]
+            history.append(obs)
+            # report performance for current timestep only
+            rmse = sqrt(mean_squared_error([obs], [yhat]))
+            scores.append(rmse)
+            print('p=%d, t=%d, predicted=%f, expected=%f, RMSE:%.3f' % (p, t, yhat, obs, rmse))
 
 
 
