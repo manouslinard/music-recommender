@@ -455,8 +455,9 @@ def plot_time_series(conn, discname, band):
         print(f"No results found for disc '{discname}' by band '{band}'.")
         return
     date_rng = pd.date_range(start=df['date'].iloc[0], end=df['date'].iloc[-1], freq='D')
-    val = 40 + 15 * np.tile(np.sin(np.linspace(-np.pi, np.pi, 365)), 5)
-    val = np.append(val, val[1824]) + 5 * np.random.rand(1826)
+    val = 40 + 15 * np.tile(np.sin(np.linspace(-np.pi, np.pi, len(date_rng))), 5)
+    val_diff = val[len(date_rng)-1] - val[-1]
+    val = np.append(val[:len(date_rng)], [val[-1] + val_diff] * (len(date_rng) - len(val))) + 5 * np.random.rand(len(date_rng))
     series = pd.DataFrame({'values': val}, index=pd.DatetimeIndex(date_rng))
     ax = series.plot()
     ax.set_title(f"{discname} by {band}")
@@ -475,10 +476,11 @@ def plot_time_series(conn, discname, band):
 
 
 
+
 # plot_avg_user_band_age(conn, band_names)
 # plot_countries_most_music(conn)
 # plot_top_x_discs_by_quantity(conn)
 # plot_disc_gender_distribution(conn)
 # plot_users_by_gender(conn)
 # plot_user_age(conn)
-plot_time_series(conn,"Let It Be","The Beatles")
+plot_time_series(conn,"Live 2003","Coldplay")

@@ -11,7 +11,7 @@ load_dotenv()
 
 YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
-band_names = ["the+beatles", "scorpions", "coldplay"]
+band_names = ["coldplay"]
 # "scorpions", "the+beatles", "queen", "acdc", "u2"
 
 def find_info_band(band_name: str) -> dict:
@@ -43,7 +43,8 @@ def find_top_albums(band_name: str) -> list:
     albums_title = []
     for r in releases["releases"]:
         # print(r)
-        albums_title.append(r["title"])
+        if r["type"] == 'master':
+            albums_title.append(r["title"])
     return (popular_band_id, albums_title)
 
 
@@ -91,7 +92,10 @@ def load_api():
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
     if bool(int(os.environ.get('LOAD_PRICES', 0))):
-        create_db.load_prices(conn)
+        if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
+            create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))
+        else:
+            create_db.load_prices(conn)
     else:
         print("Prices not inserted.")
 

@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import networkx as nx
 import matplotlib.pyplot as plt
-
+import scraper.scrape as sp
 def create_tables(conn):
     try:
         # Create a cursor object
@@ -128,6 +128,24 @@ def load_users(conn):
     conn.commit()
     print("Data inserted successfully.")
 
+def load_prices_webscrape(conn, MAX_DISCS=-1):
+    cursor = conn.cursor()
+    cursor.execute("SELECT band_id,discs.band,discs.name FROM discs JOIN bands ON discs.band=bands.name")
+    rows = cursor.fetchall()
+    count = 0
+    for row in rows:
+        if MAX_DISCS > 0 and count >= MAX_DISCS:
+            break
+        count += 1
+        band_id, band_name, disc_name = row
+        d = sp.load_prices_discogs(band_id, disc_name)
+        # define the query to insert the dictionary into the database table
+        # print(d)
+        if d != None:
+            insert_query = "INSERT INTO disc_prices (name, values, band, date) VALUES (%s, %s, %s, %s)"
+            # iterate over the dictionary and insert each item into the database
+            for i in d:
+                cursor.execute(insert_query, (disc_name, i["lowest_price"].replace('$', ''), band_name, i["date"]))
 
 def load_prices(conn):
     cursor = conn.cursor()
