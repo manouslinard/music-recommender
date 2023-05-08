@@ -1,16 +1,13 @@
-import pandas as pd
-import sqlite3
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
-import matplotlib.pyplot as plt
 import time
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-import requests
+import csv
 
 artist_name = "Queen"
 disc_name = "Jazz"
@@ -82,6 +79,7 @@ else:
 
 # print(albums_buy_url[disc_name])
 visited = []
+data = []
 for buy_u in albums_buy_url[disc_name]:
     if buy_u in visited:
         continue
@@ -108,10 +106,23 @@ for buy_u in albums_buy_url[disc_name]:
     # Extracting last sold date and price statistics
     try:
         last_sold = ul_tags[1].find('time').get('datetime')
-        lowest_price = ul_tags[1].find_all('span')[1].text
-        median_price = ul_tags[1].find_all('span')[2].text
-        highest_price = ul_tags[1].find_all('span')[3].text
+        lowest_price = ul_tags[1].find_all('span')[2].text
+        median_price = ul_tags[1].find_all('span')[4].text
+        highest_price = ul_tags[1].find_all('span')[6].text
+        data.append({"date": last_sold, "lowest_price": lowest_price, "median_price": median_price, "highest_price": highest_price})
     except AttributeError:
         # do nothing
         pass
-    print(last_sold+": "+ median_price)
+    print(last_sold+": "+ highest_price)
+
+# sort the data by date
+data.sort(key=lambda x: x["date"])
+
+# write the data to a CSV file
+with open('data.csv', 'w', newline='') as csvfile:
+    fieldnames = ['date', 'lowest_price', 'median_price', 'highest_price']
+    writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+
+    writer.writeheader()
+    for d in data:
+        writer.writerow(d)
