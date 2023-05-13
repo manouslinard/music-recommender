@@ -81,6 +81,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False, p
         albums[disc_name] = discogs_url+buy_link+"&limit=250"
     else:
         print("Not for Sale.")
+        print(disc_name)
         return pd.DataFrame()   # returns empty pandas Dataframe.
 
     visited = []
