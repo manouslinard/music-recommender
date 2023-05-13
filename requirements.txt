@@ -10,3 +10,5 @@ statsmodels
 selenium
 webdriver-manager
 beautifulsoup4
+seaborn
+scipy

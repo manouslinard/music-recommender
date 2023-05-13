@@ -4,15 +4,17 @@ from selenium.webdriver.chrome.service import Service
 from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.common.by import By
 import time
+from scipy.stats.mstats import winsorize
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from bs4 import BeautifulSoup
-import csv
+import seaborn as sns
+import matplotlib.pyplot as plt
 import pandas as pd
 from webdriver_manager.firefox import GeckoDriverManager
 
 
-def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False):
+def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False, plot=False):
 
     artist_name = str(artist_name)
     disc_name = disc_name.replace(' ', '-').replace('/', '-')
@@ -37,6 +39,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False):
     discogs_url = "https://www.discogs.com"
 
     page_url = discogs_url+"/artist/"+artist_name+"?limit=500"
+    print(f"Searching for disc: {disc_name}")
     print('Opening Page...')
     driver.get(page_url)
 
@@ -66,7 +69,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False):
     # print(albums.keys())
 
     if disc_name not in albums:
-        return
+        return pd.DataFrame()   # returns empty pandas Dataframe.
 
     driver.get(albums[disc_name])
     html = driver.page_source
@@ -78,7 +81,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False):
         albums[disc_name] = discogs_url+buy_link+"&limit=250"
     else:
         print("Not for Sale.")
-        return
+        return pd.DataFrame()   # returns empty pandas Dataframe.
 
     visited = []
     data = []
@@ -143,38 +146,45 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False):
                 pass
             print(last_sold+": "+ median_price)
 
-    # sort the data by date
-    data.sort(key=lambda x: x["date"])
-
     # Convert data list into pandas DataFrame
     df = pd.DataFrame(data)
 
     # Convert the "lowest_price", "median_price", and "highest_price" columns to floats
     df[["lowest_price", "median_price", "highest_price"]] = df[["lowest_price", "median_price", "highest_price"]].applymap(lambda x: float(x.lstrip("$")))
 
+    # Convert the date column to datetime format
+    df['date'] = pd.to_datetime(df['date'])
+
     # Group rows by date and calculate the mean of the "lowest_price", "median_price", and "highest_price" columns for each group
-    grouped = df.groupby("date").mean().reset_index()
+    df = df.groupby("date").mean().reset_index().sort_values('date').set_index('date')
 
-    # Convert the "lowest_price", "median_price", and "highest_price" columns back to strings
-    grouped[["lowest_price", "median_price", "highest_price"]] = grouped[["lowest_price", "median_price", "highest_price"]].applymap(lambda x: "${:.2f}".format(x))
+    # print(df)
 
-    # Convert the DataFrame back to a list of dictionaries
-    data = grouped.to_dict("records")
+    if plot:
+        # sns.boxplot(x=df['lowest_price'])
+        sns.displot(df["lowest_price"], bins=10,kde=False)
+        plt.title('Before Winsorize')
+        plt.show()
+
+    # apply winsorize to each column separately
+    for col in df.columns:
+        df[col] = winsorize(df[col], limits=(0.01, 0.02))
+
+    if plot:
+        # sns.boxplot(x=df['lowest_price'])
+        sns.displot(df["lowest_price"], bins=10,kde=False)
+        plt.title('After Winsorize')
+        plt.show()
+
+    # Fill in missing dates with NaNs and puts previous average:
+    df = df.resample('D').mean().fillna(method="ffill")
 
     if write_csv:
-        print("Writing data to csv...")
-        # write the data to a CSV file
-        with open('data.csv', 'w', newline='') as csvfile:
-            fieldnames = ['date', 'lowest_price', 'median_price', 'highest_price']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+        # convert dataframe to csv file
+        df.to_csv('data.csv')
 
-            writer.writeheader()
-            for d in data:
-                writer.writerow(d)
-
-        print(f"Prices for disc {disc_name} of band with id {artist_name} saved.")
-    driver.quit()
-    return data
+    # print(df)
+    return df
 
 if __name__ == "__main__":
-    load_prices_discogs("29735", "Moses")
+    load_prices_discogs("29735", "Parachutes", write_csv=True, plot=True)

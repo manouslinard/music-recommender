@@ -141,11 +141,15 @@ def load_prices_webscrape(conn, MAX_DISCS=-1):
         d = sp.load_prices_discogs(band_id, disc_name)
         # define the query to insert the dictionary into the database table
         # print(d)
-        if d != None:
+        if not d.empty:
+            # define the query to insert the dataframe into the database table
             insert_query = "INSERT INTO disc_prices (name, values, band, date) VALUES (%s, %s, %s, %s)"
-            # iterate over the dictionary and insert each item into the database
-            for i in d:
-                cursor.execute(insert_query, (disc_name, i["lowest_price"].replace('$', ''), band_name, i["date"]))
+            # iterate over the dataframe and insert each row into the database
+            for index, row in d.iterrows():
+                cursor.execute(insert_query, (disc_name, row["lowest_price"], band_name, index.date()))
+        else:
+            # TODO: fill with synthetic data. and when pandas size <= 8?
+            pass
 
 def load_prices(conn):
     cursor = conn.cursor()
