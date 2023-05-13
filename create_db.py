@@ -1,6 +1,6 @@
 import random
 import pandas as pd
-import numpy as np
+from scipy.stats.mstats import winsorize
 import networkx as nx
 import matplotlib.pyplot as plt
 import scraper.scrape as sp
@@ -148,9 +148,7 @@ def load_prices_webscrape(conn, MAX_DISCS=-1):
             for index, row in d.iterrows():
                 cursor.execute(insert_query, (disc_name, row["lowest_price"], band_name, index.date()))
         else:
-            # TODO: fill with synthetic data. and when pandas size <= 8?
             load_prices(conn,1,disc_name,band_name)
-            pass
 
 def load_prices(conn,boolean,name_of_disc,band_of_disk):
     cursor = conn.cursor()
@@ -189,7 +187,7 @@ def load_prices(conn,boolean,name_of_disc,band_of_disk):
             conn.commit()
             print("Prices updated successfully for disc:", name_of_disc, "band:", band_of_disk)
             return
-        
+
     df = pd.DataFrame(discs, columns=['name', 'band'])
     # Open the CSV file and read the data
     df = pd.read_csv("File_series.csv")
@@ -207,7 +205,6 @@ def load_prices(conn,boolean,name_of_disc,band_of_disk):
         name, band = disc
         df = pd.read_csv("File_series.csv")
         df['date'] = pd.to_datetime(df['date'])
-        df['date'] = pd.to_datetime(df['date'])
     
         # if the first date is missing, replace it with the earliest date from the database
         if pd.isna(df['date'][0]):
@@ -220,16 +217,15 @@ def load_prices(conn,boolean,name_of_disc,band_of_disk):
         df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
         df['values'] = df['values'].ffill()
 
+        # handles outlier values:
+        df['values'] = winsorize(df['values'], limits=(0.01, 0.02))
+
         # insert the data into the 'disc_prices' table
         for row in df.itertuples(index=False):
             cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name, band))
 
     conn.commit()
     print("Prices inserted successfully.")
-
-
-
-
 
 
 def insert_user_has_disc(conn):
