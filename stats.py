@@ -3,12 +3,13 @@ import os
 from dotenv import load_dotenv
 from sklearn.metrics import mean_squared_error
 from math import sqrt
-from numpy import median
-import statsmodels.api as sm
 import matplotlib.pyplot as plt
-from load_api import band_names
 import pandas as pd
 import numpy as np
+import warnings
+
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable")
+
 
 # DELETE WHEN DONE ================================
 load_dotenv()
@@ -79,18 +80,11 @@ def countries_most_music(conn):
     """
     Returns a dictionary with countries and the users that each country has in the app.
     """
-    cur = conn.cursor()
     query = """
     SELECT country, COUNT(*) FROM Users WHERE country != 'unregistered' GROUP BY country;
     """
-    cur.execute(query)
-    result = cur.fetchall()
-    cur.close()
-
-    country_dict = {}
-    for row in result:
-        country_dict[row[0]] = row[1]
-
+    df = pd.read_sql(query, conn)
+    country_dict = dict(zip(df['country'], df['count']))
     return country_dict
 
 #Q3
@@ -98,19 +92,18 @@ def band_most_listeners(conn, band_name):
     """
     Returns the country with the most users who listen to the given band.
     """
-    cur = conn.cursor()
     query = """
         SELECT country, COUNT(*) AS user_count
         FROM users
         JOIN user_likes_band ON users.username = user_likes_band.username
         WHERE LOWER(band_name) = LOWER(%s) AND country != 'unregistered'
         GROUP BY country
-        ORDER BY user_count DESC`
+        ORDER BY user_count DESC
         LIMIT 1
     """
-    cur.execute(query, (band_name,))
-    result = cur.fetchone()
-    cur.close()
+    with conn.cursor() as cur:
+        cur.execute(query, (band_name,))
+        result = cur.fetchone()
     return result[0]
 
 # Q4
@@ -119,24 +112,13 @@ def band_most_gender(conn, band_name):
     Returns the gender that the most users who listen to a specific band are.
     """
     query = """
-    SELECT gender
+    SELECT *
     FROM Users
-    JOIN user_likes_band ON Users.username = user_likes_band.username
-    JOIN Bands ON user_likes_band.band_name = Bands.name
-    WHERE LOWER(Bands.name) = LOWER(%s)
+    JOIN user_likes_band ON LOWER(Users.username) = LOWER(user_likes_band.username)
+    JOIN Bands ON LOWER(user_likes_band.band_name) = LOWER(Bands.name)
     """
-    cur = conn.cursor()
-    cur.execute(query, (band_name,))
-    rows = cur.fetchall()
-
-    gender_count = {}
-    for row in rows:
-        if row[0] not in gender_count:
-            gender_count[row[0]] = 1
-        else:
-            gender_count[row[0]] += 1
-
-    max_gender = max(gender_count, key=gender_count.get)
+    df = pd.read_sql(query, conn)
+    max_gender = df.groupby('gender').size().idxmax()
     return max_gender
 
 # Q5
@@ -154,8 +136,7 @@ def band_with_most_listeners(conn):
     with conn.cursor() as cur:
         cur.execute(query)
         result = cur.fetchone()
-        if result:
-            return result[0]
+    return result[0] if result else None
 
 # Q6
 def avg_disc_count(conn):
@@ -173,7 +154,7 @@ def avg_disc_count(conn):
     with conn.cursor() as cur:
         cur.execute(query)
         result = cur.fetchone()
-        return round(result[0])
+    return round(result[0])
 
 # Q7
 def band_users_by_country(conn, band_name):
@@ -188,10 +169,12 @@ def band_users_by_country(conn, band_name):
         WHERE LOWER(Bands.name) = LOWER(%s)
         GROUP BY country
     """
-    with conn.cursor() as cur:
-        cur.execute(query, (band_name,))
-        rows = cur.fetchall()
-        result = {row[0]: row[1] for row in rows}
+    # execute the query and read the results into a dataframe
+    df = pd.read_sql(query, conn, params=[band_name])
+
+    # convert the dataframe to a dictionary
+    result = df.set_index('country')['count'].to_dict()
+    result.pop('unregistered')  # removes unregistered
     return result
 
 # Q8
@@ -206,11 +189,11 @@ def disc_users_country(conn, disc_name):
     JOIN Discs ON user_has_discs.disc_name = Discs.name AND user_has_discs.disc_band = Discs.band
     WHERE LOWER(Discs.name) = LOWER(%s);
     """
+    # Use read_sql_query to execute the SQL query and load results into a pandas DataFrame
+    df = pd.read_sql_query(query, conn, params=[disc_name])
 
-    with conn.cursor() as cur:
-        cur.execute(query, (disc_name,))
-        rows = cur.fetchall()
-        return [row[0] for row in rows]
+    # Convert the DataFrame into a list and return
+    return df['country'].tolist()
 
 # Q9
 def num_users_with_disc(conn, disc_name):
@@ -245,11 +228,7 @@ def disc_most_gender(conn, disc_name):
     with conn.cursor() as cur:
         cur.execute(sql, (disc_name,))
         result = cur.fetchone()
-
-    if result is not None:
-        return result[0]
-    else:
-        return None
+    return result[0] if result else None
 
 # Q11
 def most_listened_bands_by_country(conn):
@@ -266,18 +245,14 @@ def most_listened_bands_by_country(conn):
         GROUP BY Users.country, Bands.name
         ORDER BY Users.country, listens DESC;
         """
-    with conn.cursor() as cur:
-        cur.execute(query)
-        results = cur.fetchall()
+    df = pd.read_sql(query, conn)
+    df = df[df['name'] != 'unregistered']
+    df = df.groupby('country').first()
 
-    most_listened = {}
-    for country, band, listens in results:
-        if country not in most_listened:
-            most_listened[country] = (band, listens)
-        elif listens > most_listened[country][1]:
-            most_listened[country] = (band, listens)
-
-    return {country: data for country, data in most_listened.items() if data[0] != 'unregistered'}
+    result = {}
+    for country, row in df.iterrows():
+        result[country] = (row['name'], row['listens'])
+    return result
 
 # Q12
 def top_x_discs_by_quantity(conn, x=5):
@@ -291,29 +266,26 @@ def top_x_discs_by_quantity(conn, x=5):
         ORDER BY num_users DESC
         LIMIT {x};
         """
-    with conn.cursor() as cur:
-        cur.execute(query)
-        results = cur.fetchall()
+    # Use pandas read_sql to execute the query and create a DataFrame from the results
+    df = pd.read_sql(query, conn)
 
-    top_x_discs = []
-    for row in results:
-        disc_name, disc_band, num_users = row
-        top_x_discs.append((disc_name, disc_band, num_users))
+    # Create a list of tuples for the top x discs
+    top_x_discs = df[['disc_name', 'disc_band', 'num_users']].to_records(index=False).tolist()
 
     return top_x_discs
 
 
 # print(avg_user_band_age(conn, "scorpions"))
 # print(countries_most_music(conn))
-# print(band_most_listeners(conn, "scorpions"))
-# print(band_most_gender(conn, "scorpions"))
+# print(band_most_listeners(conn, "coldplay"))
+# print(band_most_gender(conn, "coldplay"))
 # print(band_with_most_listeners(conn))
 # print(avg_disc_count(conn))
-# print(band_users_by_country(conn, "scorpions"))
-# print(disc_users_country(conn, "Anthology 3"))
+# print(band_users_by_country(conn, "coldplay"))
+# print(disc_users_country(conn, "Moses"))
 # print(num_users_with_disc(conn, "Anthology 3"))
-# print(disc_most_gender(conn, "Anthology 3"))
-# print(most_listened_bands_by_country(conn))
+# print(disc_most_gender(conn, "Clocks"))
+print(most_listened_bands_by_country(conn))
 # print(top_x_discs_by_quantity(conn))
 
 # ==================================== PLOT =====================
@@ -473,10 +445,6 @@ def plot_time_series(conn, discname, band):
     plt.legend()
     plt.title(f"Actual vs. Predicted for {discname} by {band} (p={persistence_values[-1]})")
     plt.show()
-
-
-
-
 
 # plot_avg_user_band_age(conn, band_names)
 # plot_countries_most_music(conn)
