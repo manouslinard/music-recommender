@@ -24,7 +24,8 @@ conn = psycopg2.connect(
 def ARIMA_train(series,discname,band):
     # prepare data
     X = series.values
-    train, test = X[0:-24], X[-24:]
+    size = int(len(X) * 0.74)
+    train, test = X[0:size], X[size:len(X)]
 
     persistence_values = range(1, 25)
     scores = []
