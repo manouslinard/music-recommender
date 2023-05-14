@@ -4,6 +4,7 @@ from scipy.stats.mstats import winsorize
 import networkx as nx
 import matplotlib.pyplot as plt
 import scraper.scrape as sp
+
 def create_tables(conn):
     try:
         # Create a cursor object

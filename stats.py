@@ -248,11 +248,8 @@ def most_listened_bands_by_country(conn):
     df = pd.read_sql(query, conn)
     df = df[df['name'] != 'unregistered']
     df = df.groupby('country').first()
-
-    result = {}
-    for country, row in df.iterrows():
-        result[country] = (row['name'], row['listens'])
-    return result
+    df = df[['name', 'listens']].apply(lambda x: (x[0], x[1]), axis=1)
+    return df.to_dict()
 
 # Q12
 def top_x_discs_by_quantity(conn, x=5):
@@ -452,4 +449,5 @@ def plot_time_series(conn, discname, band):
 # plot_disc_gender_distribution(conn)
 # plot_users_by_gender(conn)
 # plot_user_age(conn)
-plot_time_series(conn,"Live 2003","Coldplay")
+# plot_time_series(conn,"Live 2003","Coldplay")
+most_listened_bands_by_country(conn)
