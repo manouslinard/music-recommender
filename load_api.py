@@ -95,6 +95,7 @@ def load_api():
         if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
             create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))
         else:
+            print("Loading synthetic data...")
             create_db.load_prices(conn)
     else:
         print("Prices not inserted.")

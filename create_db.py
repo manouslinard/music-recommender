@@ -148,51 +148,29 @@ def load_prices_webscrape(conn, MAX_DISCS=-1):
             for index, row in d.iterrows():
                 cursor.execute(insert_query, (disc_name, row["lowest_price"], band_name, index.date()))
         else:
-            load_prices(conn,1,disc_name,band_name)
+            print("Loading synthetic data...")
+            load_prices(conn,disc_name,band_name)
 
-def load_prices(conn,boolean,name_of_disc,band_of_disk):
+def load_prices(conn,name_of_disc:str = None, band_of_disk:str= None):
     cursor = conn.cursor()
     cursor.execute("SELECT name, band FROM discs")
     discs = cursor.fetchall()
-    if boolean == 1 and name_of_disc != "" and band_of_disk != "":
+    df = pd.DataFrame(discs, columns=['name', 'band'])
+    if  name_of_disc  and band_of_disk :
         # Check if the disc and band exist in the database
         cursor.execute("SELECT * FROM discs WHERE name = %s AND band = %s", (name_of_disc, band_of_disk))
         disc = cursor.fetchone()
         if disc:
-            # If the disc exists, update only the prices for that disc
-            cursor.execute("DELETE FROM disc_prices WHERE name = %s AND band = %s", (name_of_disc, band_of_disk))
-            df = pd.read_csv("File_series.csv")
-            df['date'] = pd.to_datetime(df['date'])
-
-            # Get the index of the row with the minimum date
-            min_date_index = df['date'].idxmin()
-
-            # Get the values of the row with the minimum date
-            min_date_values = df.iloc[min_date_index]['date']
-            df['date'] = pd.to_datetime(df['date'])
-            df['date'] = pd.to_datetime(df['date'])
-    
-            # if the first date is missing, replace it with the earliest date from the database
-            if pd.isna(df['date'][0]):
-                df.loc[0, 'date'] = min_date_values - pd.Timedelta(min_date_index, unit='D')
-
-            # fill missing dates with the previous date + 1
-            df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
-
-            # fill missing values with rolling mean and forward fill
-            df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
-            df['values'] = df['values'].ffill()
-            for row in df.itertuples(index=False):
-                cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name_of_disc, band_of_disk))
-            conn.commit()
-            print("Prices updated successfully for disc:", name_of_disc, "band:", band_of_disk)
+            prices_insertion(conn,cursor,df,name_of_disc,band_of_disk)
             return
 
-    df = pd.DataFrame(discs, columns=['name', 'band'])
-    # Open the CSV file and read the data
-    df = pd.read_csv("File_series.csv")
+    for disc in discs:
+        name, band = disc
+        prices_insertion(conn,cursor,df,name,band)
+    
 
-    # Convert the date column to datetime
+def prices_insertion(conn,cursor,df,name,band):
+    df = pd.read_csv("File_series.csv")
     df['date'] = pd.to_datetime(df['date'])
 
     # Get the index of the row with the minimum date
@@ -200,33 +178,23 @@ def load_prices(conn,boolean,name_of_disc,band_of_disk):
 
     # Get the values of the row with the minimum date
     min_date_values = df.iloc[min_date_index]['date']
+    df['date'] = pd.to_datetime(df['date'])
+    df['date'] = pd.to_datetime(df['date'])
 
-    for disc in discs:
-        name, band = disc
-        df = pd.read_csv("File_series.csv")
-        df['date'] = pd.to_datetime(df['date'])
-    
-        # if the first date is missing, replace it with the earliest date from the database
-        if pd.isna(df['date'][0]):
-            df.loc[0, 'date'] = min_date_values - pd.Timedelta(min_date_index, unit='D')
+    # if the first date is missing, replace it with the earliest date from the database
+    if pd.isna(df['date'][0]):
+        df.loc[0, 'date'] = min_date_values - pd.Timedelta(min_date_index, unit='D')
 
-        # fill missing dates with the previous date + 1
-        df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
+    # fill missing dates with the previous date + 1
+    df['date'] = df['date'].fillna(method='ffill') + pd.to_timedelta(df.groupby(df['date'].ffill()).cumcount(), unit='D')
 
-        # fill missing values with rolling mean and forward fill
-        df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
-        df['values'] = df['values'].ffill()
-
-        # handles outlier values:
-        df['values'] = winsorize(df['values'], limits=(0.01, 0.02))
-
-        # insert the data into the 'disc_prices' table
-        for row in df.itertuples(index=False):
-            cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name, band))
-
+    # fill missing values with rolling mean and forward fill
+    df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
+    df['values'] = df['values'].ffill()
+    for row in df.itertuples(index=False):
+        cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name, band))
     conn.commit()
-    print("Prices inserted successfully.")
-
+    print(f"Prices for disc {name} of band {band} inserted successfully.")
 
 def insert_user_has_disc(conn):
     cur = conn.cursor()
