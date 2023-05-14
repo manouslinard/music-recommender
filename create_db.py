@@ -178,8 +178,6 @@ def prices_insertion(conn,cursor,df,name,band):
 
     # Get the values of the row with the minimum date
     min_date_values = df.iloc[min_date_index]['date']
-    df['date'] = pd.to_datetime(df['date'])
-    df['date'] = pd.to_datetime(df['date'])
 
     # if the first date is missing, replace it with the earliest date from the database
     if pd.isna(df['date'][0]):
@@ -191,10 +189,15 @@ def prices_insertion(conn,cursor,df,name,band):
     # fill missing values with rolling mean and forward fill
     df['values'] = df['values'].fillna(df['values'].rolling(window=len(df), min_periods=1, center=False).mean())
     df['values'] = df['values'].ffill()
+    # apply winsorize to each column separately
+    for col in df.columns:
+        if col != "date":
+            df[col] = winsorize(df[col], limits=(0.01, 0.02))
     for row in df.itertuples(index=False):
         cursor.execute("INSERT INTO disc_prices (date, values, name, band) VALUES (%s, %s, %s, %s)", (row.date, row.values, name, band))
     conn.commit()
     print(f"Prices for disc {name} of band {band} inserted successfully.")
+
 
 def insert_user_has_disc(conn):
     cur = conn.cursor()
