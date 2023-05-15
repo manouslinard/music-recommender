@@ -51,7 +51,8 @@ def ARIMA_train(series,discname,band):
             print('p=%d, t=%d, predicted=%f, expected=%f, RMSE:%.3f' % (p, t, yhat, obs, rmse))
         all_predictions.append(predictions)
         actual_values.append(test)
-
+    rmse = sqrt(mean_squared_error(test, predictions))
+    print('RMSE Evaluation: %.3f' % rmse)
     return all_predictions, actual_values, persistence_values 
 
 # Q1
@@ -454,4 +455,4 @@ def plot_time_series(conn, discname, band):
 # plot_disc_gender_distribution(conn)
 # plot_users_by_gender(conn)
 # plot_user_age(conn)
-plot_time_series(conn,"Live 2003","Coldplay")
+plot_time_series(conn,"One I Love","Coldplay")
