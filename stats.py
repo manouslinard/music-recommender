@@ -25,7 +25,7 @@ conn = psycopg2.connect(
 def ARIMA_train(series,discname,band):
     # prepare data
     X = series.values
-    size = int(len(X) * 0.74)
+    size = int(len(X) * 0.66)
     train, test = X[0:size], X[size:len(X)]
 
     persistence_values = range(1, 25)
@@ -51,7 +51,8 @@ def ARIMA_train(series,discname,band):
             print('p=%d, t=%d, predicted=%f, expected=%f, RMSE:%.3f' % (p, t, yhat, obs, rmse))
         all_predictions.append(predictions)
         actual_values.append(test)
-
+    rmse = sqrt(mean_squared_error(test, predictions))
+    print('RMSE Evaluation: %.3f' % rmse)
     return all_predictions, actual_values, persistence_values 
 
 # Q1
@@ -246,10 +247,12 @@ def most_listened_bands_by_country(conn):
         ORDER BY Users.country, listens DESC;
         """
     df = pd.read_sql(query, conn)
-    df = df[df['name'] != 'unregistered']
     df = df.groupby('country').first()
     df = df[['name', 'listens']].apply(lambda x: (x[0], x[1]), axis=1)
-    return df.to_dict()
+    # We remove the unregister data
+    d1 = df.to_dict()
+    d1.pop('unregistered', None)
+    return d1
 
 # Q12
 def top_x_discs_by_quantity(conn, x=5):
@@ -409,10 +412,13 @@ def plot_user_age(conn):
 
     # Sort the age groups by age
     age_groups = sorted(age_counts.keys())
+    age_groups.pop(0)
 
     # Plot the line chart
-    plt.plot(age_groups, [age_counts[age] for age in age_groups])
+    plt.plot(age_groups, [age_counts[age] for age in age_groups], 'o--')
     plt.xlabel("Age")
+    # Set x-axis ticks and labels
+    plt.xticks(age_groups)
     plt.ylabel("Number of users")
     plt.title("Age Distribution of Users")
     plt.show()
@@ -449,4 +455,4 @@ def plot_time_series(conn, discname, band):
 # plot_disc_gender_distribution(conn)
 # plot_users_by_gender(conn)
 # plot_user_age(conn)
-plot_time_series(conn,"Live 2003","Coldplay")
+plot_time_series(conn,"One I Love","Coldplay")

@@ -25,6 +25,7 @@ sudo rm -rf env
 ## Env File:
 You should create a .env file in the projects directory, which will contain the following:
 ```
+BAND_NAMES=coldplay scorpions the+beatles queen acdc u2
 PSQL_PASSWORD=pass123
 PSQL_USERNAME=postgres
 PSQL_HOST=localhost
@@ -38,6 +39,8 @@ DISCOGS_SECRET=YOUR_DISCOGS_SECRET
 WEB_SCRAPE_PRICES=1
 MAX_DISC_SCRAPE=-1
 ```
+In the BAND_NAMES variable, you declare the bands that you want to get data for (these are the bands saved in the db).
+<br>
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
 <br>
 If you want to load the prices of csv file, set LOAD_PRICES=1 (it is recommended to do this with not a lot of bands, which are declared in the top of load_api.py).
