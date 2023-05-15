@@ -282,7 +282,7 @@ def top_x_discs_by_quantity(conn, x=5):
 # print(disc_users_country(conn, "Moses"))
 # print(num_users_with_disc(conn, "Anthology 3"))
 # print(disc_most_gender(conn, "Clocks"))
-print(most_listened_bands_by_country(conn))
+# print(most_listened_bands_by_country(conn))
 # print(top_x_discs_by_quantity(conn))
 
 # ==================================== PLOT =====================
@@ -449,5 +449,4 @@ def plot_time_series(conn, discname, band):
 # plot_disc_gender_distribution(conn)
 # plot_users_by_gender(conn)
 # plot_user_age(conn)
-# plot_time_series(conn,"Live 2003","Coldplay")
-most_listened_bands_by_country(conn)
+plot_time_series(conn,"Live 2003","Coldplay")
