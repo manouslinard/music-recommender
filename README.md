@@ -33,10 +33,16 @@ PSQL_DATABASE=music_band
 YOUR_API_KEY=YOUR_API_KEY
 LOAD_DATA=1
 LOAD_PRICES=0
+DISCOGS_KEY=YOUR_DISCOGS_KEY
+DISCOGS_SECRET=YOUR_DISCOGS_SECRET
+WEB_SCRAPE_PRICES=1
+MAX_DISC_SCRAPE=-1
 ```
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
 <br>
 If you want to load the prices of csv file, set LOAD_PRICES=1 (it is recommended to do this with not a lot of bands, which are declared in the top of load_api.py).
+<br>
+If you want to load prices from webscraping discogs, both LOAD_DATA and WEB_SCRAPE_PRICES should be equal to 1. If also you want to have a max limit of discs scraped per band, set MAX_DISC_SCRAPE to any positive number you want (this positive number is also the max limit).
 
 ---
 ## Users.csv file:
@@ -83,3 +89,11 @@ Now, run:
 docker run --rm -it --network="host" -e LOAD_DATA=1 music-recommender
 ```
 If you dont want to insert the ready-users from csv to docker db, set LOAD_DATA=0 in above command.
+
+---
+## Web-Scraping:
+
+The scrape.py scrapes prices from [discogs.com](https://www.discogs.com/). To get real prices, run:
+```
+python3 scrape.py
+```

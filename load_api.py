@@ -11,7 +11,7 @@ load_dotenv()
 
 YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 
-band_names = ["coldplay", "scorpions", "the+beatles", "queen", "acdc", "u2"]
+band_names = ["coldplay"]
 # "scorpions", "the+beatles", "queen", "acdc", "u2"
 
 def find_info_band(band_name: str) -> dict:
@@ -24,13 +24,29 @@ def find_info_band(band_name: str) -> dict:
 
 
 def find_top_albums(band_name: str) -> list:
-    alb = []
-    album_url = f"http://ws.audioscrobbler.com/2.0/?method=artist.gettopalbums&artist={band_name}&api_key={YOUR_API_KEY}&format=json"
-    response = requests.get(album_url)
-    top_albums = json.loads(response.text)['topalbums']['album']
-    for a in top_albums:
-        alb.append(a["name"].replace("'", "_"))
-    return alb
+    consumer_key = os.getenv("DISCOGS_KEY")
+    consumer_secret = os.getenv("DISCOGS_SECRET")
+
+    url = f'https://api.discogs.com/database/search?type=artist&q={band_name}'
+
+    response = requests.get(url, headers={
+        'User-Agent': 'MyApp/1.0',
+        'Authorization': 'Discogs key={}, secret={}'.format(consumer_key, consumer_secret)
+    })
+
+    popular_band_id = response.json()["results"][0]["id"]
+    # print(popular_band_id)
+
+    url = f'https://api.discogs.com/artists/{popular_band_id}/releases'
+    releases = requests.get(url).json()
+
+    albums_title = []
+    for r in releases["releases"]:
+        # print(r)
+        if r["type"] == 'master':
+            albums_title.append(r["title"])
+    return (popular_band_id, albums_title)
+
 
 def load_api():
 
@@ -38,8 +54,9 @@ def load_api():
     albums_bands = []
     for b in band_names:
         r = find_info_band(b)
-        a = find_top_albums(b)
+        band_id, a = find_top_albums(b)
         r["albums"] = a
+        r["band_id"] = band_id
         albums_bands.append(r)
 
     # Connect to PostgreSQL database
@@ -62,12 +79,12 @@ def load_api():
     for item in albums_bands:
         name = item['name']
         summary = item['summary'].replace('\n', ' ')
-        # summary = "hello"
+        band_id = item["band_id"]
         albums = item['albums']
-        cur.execute("INSERT INTO Bands (name, summary) VALUES (%s, %s)", (name, summary))
+        cur.execute("INSERT INTO Bands (name, summary, band_id) VALUES (%s, %s, %s)", (name, summary, band_id))
         for a in albums:
-            if a != "(null)":
-                cur.execute("INSERT INTO Discs (name, band) VALUES (%s, %s)", (a, name))
+            #if a != "(null)":
+            cur.execute("INSERT INTO Discs (name, band) VALUES (%s, %s) ON CONFLICT DO NOTHING", (a, name))
 
 
     create_db.load_users(conn)
@@ -75,7 +92,11 @@ def load_api():
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
     if bool(int(os.environ.get('LOAD_PRICES', 0))):
-        create_db.load_prices(conn)
+        if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
+            create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))
+        else:
+            print("Loading synthetic data...")
+            create_db.load_prices(conn)
     else:
         print("Prices not inserted.")
 

@@ -5,3 +5,10 @@ numpy
 pandas
 networkx
 matplotlib
+scikit-learn
+statsmodels
+selenium
+webdriver-manager
+beautifulsoup4
+seaborn
+scipy

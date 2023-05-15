@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y postgresql-client
 
 COPY .env .
 COPY users.csv .
+COPY ./scraper/scrape.py .
 COPY create_db.py .
 COPY load_api.py .
 COPY reset_db.py .
