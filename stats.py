@@ -246,10 +246,12 @@ def most_listened_bands_by_country(conn):
         ORDER BY Users.country, listens DESC;
         """
     df = pd.read_sql(query, conn)
-    df = df[df['name'] != 'unregistered']
     df = df.groupby('country').first()
     df = df[['name', 'listens']].apply(lambda x: (x[0], x[1]), axis=1)
-    return df.to_dict()
+    # We remove the unregister data
+    d1 = df.to_dict()
+    d1.pop('unregistered', None)
+    return d1
 
 # Q12
 def top_x_discs_by_quantity(conn, x=5):
@@ -409,10 +411,13 @@ def plot_user_age(conn):
 
     # Sort the age groups by age
     age_groups = sorted(age_counts.keys())
+    age_groups.pop(0)
 
     # Plot the line chart
-    plt.plot(age_groups, [age_counts[age] for age in age_groups])
+    plt.plot(age_groups, [age_counts[age] for age in age_groups], 'o--')
     plt.xlabel("Age")
+    # Set x-axis ticks and labels
+    plt.xticks(age_groups)
     plt.ylabel("Number of users")
     plt.title("Age Distribution of Users")
     plt.show()
