@@ -79,6 +79,18 @@ def create_tables(conn):
                 band VARCHAR(50) NOT NULL,
                 FOREIGN KEY (name,band) REFERENCES Discs (name,band)
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS user_rec_discs (
+                username VARCHAR(50),
+                disc_name VARCHAR(250),
+                disc_band VARCHAR(50),
+                CONSTRAINT pk_user_rec_discs PRIMARY KEY (username, disc_name, disc_band),
+                CONSTRAINT fk_user_rec_discs_username FOREIGN KEY (username)
+                    REFERENCES users (username),
+                CONSTRAINT fk_user_rec_discs_disc FOREIGN KEY (disc_name, disc_band)
+                    REFERENCES discs (name, band)
+            )
             """
         )
         foreign_keys = """
