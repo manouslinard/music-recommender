@@ -148,7 +148,7 @@ def band_user_country(band_name):
     # print(r)
     # TODO: fix band not exist in stats.py
     if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
+        return jsonify({'message': "Requested band not found."}), 404
     bands_list = [{'country': b, 'user_number': r[b]} for b in r]
     return jsonify({'countries': bands_list}), 200
 
@@ -160,8 +160,6 @@ def most_band():
         return auth[0]
     # ------
     r = stats.band_with_most_listeners(conn)
-    if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
     return jsonify({'most_listened_band': r}), 200
 
 @app.route('/stats/mostgender/<string:band_name>', methods=['GET'])
@@ -175,7 +173,7 @@ def band_most_gender(band_name):
     r = stats.band_most_gender(conn, band_name)
     # TODO: return None if band does not exist in stats.py
     if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
+        return jsonify({'message': "Requested band not found."}), 404
     return jsonify({'most_gender': r}), 200
 
 @app.route('/stats/bandcountry/<string:band_name>', methods=['GET'])
@@ -189,7 +187,7 @@ def band_most_user_heritage(band_name):
     r = stats.band_most_listeners(conn, band_name)
     # TODO: fix when input non existing band name in stats.py.
     if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
+        return jsonify({'message': "Requested band not found."}), 404
     return jsonify({'most_listener_country': r}), 200
 
 @app.route('/stats/countries/mostmusic', methods=['GET'])
@@ -200,8 +198,6 @@ def most_music_countries():
         return auth[0]
     # ------
     r = stats.countries_most_music(conn)
-    if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
     user_list = [{'country': b, 'user_number': r[b]} for b in r]
     return jsonify({'users': user_list}), 200
 
@@ -214,8 +210,6 @@ def average_disc():
         return auth[0]
     # ------
     r = stats.avg_disc_count(conn)
-    if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
     return jsonify({'avg_user_disc': r}), 200
 
 @app.route('/stats/average/age/<string:band_name>', methods=['GET'])
@@ -229,7 +223,7 @@ def average_user_band_age(band_name):
     r = stats.avg_user_band_age(conn, band_name)
     # TODO: fix when input non existing band name in stats.py.
     if not r:
-        return jsonify({'message': "Requested disc not found."}), 404
+        return jsonify({'message': "Requested band not found."}), 404
     return jsonify({'average_user_age': r}), 200
 
 
