@@ -14,6 +14,51 @@ def find_user_friends(username, conn):
     merged_list = list(set([item[0] for item in results]))
     return merged_list
 
+def find_specific_friends(username, friends_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT Users.username, Users.first_name, Users.last_name, Users.gender, Users.country, Users.age, Users.phone
+        FROM Users JOIN User_Friends ON Users.username = User_Friends.friend_username
+        WHERE User_Friends.username = %s and Users.username = %s
+    """
+        cur.execute(query, (friends_name,username))
+        results = cur.fetchall()
+        return results
+
+def disc_prices(disc_name,conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT values from disc_prices where name = %s
+    """
+        cur.execute(query, (disc_name,))
+        results = cur.fetchall()
+        return results
+
+def disc_info_last_price(disc_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT dp.values, b.summary
+        FROM disc_prices dp
+        JOIN Discs d ON dp.name = d.name
+        JOIN Bands b ON d.band = b.name
+        WHERE dp.name = %s AND d.name = %s
+        ORDER BY dp.date DESC
+        LIMIT 1;
+
+        """
+        cur.execute(query, (disc_name, disc_name))
+        results = cur.fetchall()
+        return results
+
+def disc_band_info(band_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT name,summary from Bands where name = %s
+        """
+        cur.execute(query, (band_name,))
+        results = cur.fetchall()
+        return results
+
 def get_user_discs(username, conn):
     with conn.cursor() as cur:
         query = """
@@ -21,6 +66,19 @@ def get_user_discs(username, conn):
             FROM user_has_discs
             JOIN discs ON user_has_discs.disc_name = discs.name
             WHERE user_has_discs.username = %s
+        """
+
+        cur.execute(query, (username,))
+        data = cur.fetchall()
+    return data
+
+def get_user_bands(username, conn):
+    with conn.cursor() as cur:
+        query = """
+            SELECT user_likes_band.band_name
+            FROM user_likes_band
+            JOIN Users ON user_likes_band.username = Users.username
+            WHERE user_likes_band.username = %s
         """
 
         cur.execute(query, (username,))

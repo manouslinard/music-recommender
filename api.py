@@ -6,6 +6,7 @@ from Crypto.Cipher import AES
 import recommend
 import stats
 
+
 app = Flask(__name__)
 
 load_dotenv()
@@ -71,6 +72,141 @@ def get_user_discs():
 
     # Return the user's discs as JSON response
     return jsonify({'discs': discs_list}), 200
+
+@app.route('/bands', methods=['GET'])
+def get_user_bands():
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    bands = recommend.get_user_bands(username,conn)
+    bands_list = [{'band_name': bands[0]} for band in bands]
+    return jsonify({'discs': bands_list}), 200
+
+@app.route('/recommend', methods=['GET'])
+def get_user_recommend():
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    recommend_list = recommend.recommend_disc_user(username,conn)
+    return jsonify({'recommend': recommend_list}), 200
+
+@app.route('/friends', methods=['GET'])
+def get_user_friends():
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    friends_list = recommend.find_user_friends(username,conn)
+    return jsonify({'friends': friends_list}), 200
+
+@app.route('/friends/<string:friends_username>', methods=['GET'])
+def get_requested_friend(friends_username):
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    friend = recommend.find_specific_friends(friends_username, username, conn)
+    if not friend:
+        return jsonify({'message': "This user is not a friend with the specific user."}), 404
+    friend_data = [{'username': friend_d[0], 'first_name': friend_d[1], 'last_name': friend_d[2], 'gender': friend_d[3], 'country': friend_d[4], 'age': friend_d[5], 'phone': friend_d[6]} for friend_d in friend]
+    return jsonify({'friend': friend_data}), 200
+
+@app.route('/discs/friends', methods=['GET'])
+def get_user_friends_discs():
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    friends_list = recommend.find_user_friends(username,conn)
+    friends_discs = []
+    for friend in friends_list:
+        friend_discs = (friend,recommend.get_user_discs(friend, conn))
+        friends_discs.extend(friend_discs)
+
+    return jsonify({'discs': friends_discs}), 200
+
+@app.route('/discs/friends/<string:friends_username>', methods=['GET'])
+def get_requested_friend_discs(friends_username):
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    check_friends = recommend.find_specific_friends(friends_username,username,conn)
+    if not check_friends:
+        return jsonify({'message': "This user is not a friend with the specific user."}), 404
+    friend_discs = recommend.get_user_discs(friends_username, conn)
+    return jsonify({'discs':friend_discs}), 200
+
+@app.route('/bands/friends', methods=['GET'])
+def get_user_friends_bands():
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    friends_list = recommend.find_user_friends(username,conn)
+    friends_bands = []
+    for friend in friends_list:
+        friend_bands = (friend,recommend.get_user_bands(friend, conn))
+        friends_bands.extend(friend_bands)
+
+    return jsonify({'discs': friends_bands}), 200
+
+@app.route('/bands/friends/<string:friends_username>', methods=['GET'])
+def get_requested_friend_bands(friends_username):
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    check_friends = recommend.find_specific_friends(friends_username,username,conn)
+    if not check_friends:
+        return jsonify({'message': "This user is not a friend with the specific user."}), 404
+    friend_discs = recommend.get_user_bands(friends_username, conn)
+    return jsonify({'discs':friend_discs}), 200
+
+@app.route('/price/<string:disc_name>/history', methods=['GET'])
+def get_web_scrape_disc_price(disc_name):
+    # authentication -----
+    auth = authenticate()
+    if auth[1] != 200:
+        return auth[0]
+    username = auth[0]
+    # ------
+    prices = recommend.disc_prices(disc_name,conn)
+    return jsonify({'prices':prices}), 200
+
+@app.route('/info/discs/<string:disc_name>', methods=['GET'])
+def get_disc_info_last_price(disc_name):
+    info = recommend.disc_info_last_price(disc_name, conn)
+    return jsonify({'disc info': info}), 200
+
+@app.route('/info/bands/<string:band_name>', methods=['GET'])
+def get_band_info(band_name):
+    info = recommend.disc_band_info(band_name, conn)
+    return jsonify({'disc info': info}), 200
+
+
+
+
+
+    
 
 @app.route('/stats/topdiscs/<int:disc_num>', methods=['GET'])
 def get_topn_discs(disc_num):
