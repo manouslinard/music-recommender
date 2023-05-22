@@ -39,7 +39,10 @@ DISCOGS_SECRET=YOUR_DISCOGS_SECRET
 WEB_SCRAPE_PRICES=1
 MAX_DISC_SCRAPE=-1
 NUMBER_REC_DISCS=1
+SECRET_KEY=YOUR_SECRET_KEY
 ```
+The secret key is a sting used for user password encryption. This should have exact length 16, 24 or 32 characters. Do not change it when saving the users to database and then retrieving them in api.
+<br>
 In the BAND_NAMES variable, you declare the bands that you want to get data for (these are the bands saved in the db).
 <br>
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.

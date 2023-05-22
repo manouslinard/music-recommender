@@ -1,9 +1,12 @@
 import random
+import os
 import pandas as pd
 from scipy.stats.mstats import winsorize
 import networkx as nx
 import matplotlib.pyplot as plt
 import scraper.scrape as sp
+from Crypto.Cipher import AES
+from dotenv import load_dotenv
 
 def create_tables(conn):
     try:
@@ -15,6 +18,7 @@ def create_tables(conn):
             """
             CREATE TABLE IF NOT EXISTS Users (
                 username VARCHAR(50) PRIMARY KEY,
+                password TEXT NOT NULL,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
                 gender CHAR,
@@ -135,11 +139,20 @@ def load_users(conn):
     df['age'].fillna(-1, inplace=True)
     df.fillna("unregistered", inplace=True)
 
-    cursor.executemany("INSERT INTO users (username, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                   [(row['username'], row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
+    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+                   [(row['username'], encr(row['password']), row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
 
     conn.commit()
     print("Data inserted successfully.")
+
+def encr(password):
+    load_dotenv()
+    key = os.getenv('SECRET_KEY', '1234567890123456').encode('utf-8')
+    # Input string to be encrypted (padding to adjust length)
+    input_string = password.rjust(32)
+    # Encrypt the string
+    cipher = AES.new(key)
+    return cipher.encrypt(input_string.encode())
 
 def load_prices_webscrape(conn, MAX_DISCS=-1):
     cursor = conn.cursor()
