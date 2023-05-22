@@ -73,6 +73,9 @@ def avg_user_band_age(conn, band_name):
         cur.execute(sql, (band_name,))
         result = cur.fetchone()
 
+    if not result[0]:
+        return None
+
     # Return the average age
     return round(result[0], 2)
 
@@ -105,20 +108,29 @@ def band_most_listeners(conn, band_name):
     with conn.cursor() as cur:
         cur.execute(query, (band_name,))
         result = cur.fetchone()
+
+    if not result:
+        return None
     return result[0]
 
 # Q4
 def band_most_gender(conn, band_name):
     """
     Returns the gender that the most users who listen to a specific band are.
+    If the band_name does not exist, returns None.
     """
     query = """
     SELECT *
     FROM Users
     JOIN user_likes_band ON LOWER(Users.username) = LOWER(user_likes_band.username)
     JOIN Bands ON LOWER(user_likes_band.band_name) = LOWER(Bands.name)
+    WHERE LOWER(Bands.name) = LOWER(%s)
     """
-    df = pd.read_sql(query, conn)
+    df = pd.read_sql(query, conn, params=(band_name,))
+
+    if df.empty:
+        return None
+
     max_gender = df.groupby('gender').size().idxmax()
     return max_gender
 
@@ -175,6 +187,8 @@ def band_users_by_country(conn, band_name):
 
     # convert the dataframe to a dictionary
     result = df.set_index('country')['count'].to_dict()
+    if not result:
+        return None
     result.pop('unregistered')  # removes unregistered
     return result
 
@@ -449,10 +463,11 @@ def plot_time_series(conn, discname, band):
     plt.title(f"Actual vs. Predicted for {discname} by {band} (p={persistence_values[-1]})")
     plt.show()
 
-# plot_avg_user_band_age(conn, band_names)
-# plot_countries_most_music(conn)
-# plot_top_x_discs_by_quantity(conn)
-# plot_disc_gender_distribution(conn)
-# plot_users_by_gender(conn)
-# plot_user_age(conn)
-plot_time_series(conn,"One I Love","Coldplay")
+if __name__ == "__main__":
+    # plot_avg_user_band_age(conn, band_names)
+    # plot_countries_most_music(conn)
+    # plot_top_x_discs_by_quantity(conn)
+    # plot_disc_gender_distribution(conn)
+    # plot_users_by_gender(conn)
+    # plot_user_age(conn)
+    plot_time_series(conn,"One I Love","Coldplay")
