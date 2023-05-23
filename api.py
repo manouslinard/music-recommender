@@ -57,6 +57,63 @@ def authenticate():
 
     return username, 200
 
+def find_specific_friends(username, friends_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT Users.username, Users.first_name, Users.last_name, Users.gender, Users.country, Users.age, Users.phone
+        FROM Users JOIN User_Friends ON Users.username = User_Friends.friend_username
+        WHERE User_Friends.username = %s and Users.username = %s
+    """
+        cur.execute(query, (friends_name,username))
+        results = cur.fetchall()
+        return results
+
+def disc_prices(disc_name,conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT values from disc_prices where name = %s
+    """
+        cur.execute(query, (disc_name,))
+        results = cur.fetchall()
+        return results
+
+def disc_info_last_price(disc_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT dp.values, b.summary
+        FROM disc_prices dp
+        JOIN Discs d ON dp.name = d.name
+        JOIN Bands b ON d.band = b.name
+        WHERE dp.name = %s AND d.name = %s
+        ORDER BY dp.date DESC
+        LIMIT 1;
+
+        """
+        cur.execute(query, (disc_name, disc_name))
+        results = cur.fetchall()
+        return results
+
+def disc_band_info(band_name, conn):
+    with conn.cursor() as cur:
+        query = """
+        SELECT name,summary from Bands where name = %s
+        """
+        cur.execute(query, (band_name,))
+        results = cur.fetchall()
+        return results
+    
+def get_users_bands(username, conn):
+    with conn.cursor() as cur:
+        query = """
+            SELECT user_likes_band.band_name
+            FROM user_likes_band
+            JOIN Users ON user_likes_band.username = Users.username
+            WHERE user_likes_band.username = %s
+        """
+
+        cur.execute(query, (username,))
+        data = cur.fetchall()
+    return data
 
 @app.route('/discs', methods=['GET'])
 def get_user_discs():
@@ -81,7 +138,7 @@ def get_user_bands():
         return auth[0]
     username = auth[0]
     # ------
-    bands = recommend.get_user_bands(username,conn)
+    bands = get_users_bands(username, conn)
     bands_list = [{'band_name': bands[0]} for band in bands]
     return jsonify({'discs': bands_list}), 200
 
@@ -115,7 +172,7 @@ def get_requested_friend(friends_username):
         return auth[0]
     username = auth[0]
     # ------
-    friend = recommend.find_specific_friends(friends_username, username, conn)
+    friend = find_specific_friends(friends_username, username, conn)
     if not friend:
         return jsonify({'message': "This user is not a friend with the specific user."}), 404
     friend_data = [{'username': friend_d[0], 'first_name': friend_d[1], 'last_name': friend_d[2], 'gender': friend_d[3], 'country': friend_d[4], 'age': friend_d[5], 'phone': friend_d[6]} for friend_d in friend]
@@ -145,7 +202,7 @@ def get_requested_friend_discs(friends_username):
         return auth[0]
     username = auth[0]
     # ------
-    check_friends = recommend.find_specific_friends(friends_username,username,conn)
+    check_friends = find_specific_friends(friends_username,username,conn)
     if not check_friends:
         return jsonify({'message': "This user is not a friend with the specific user."}), 404
     friend_discs = recommend.get_user_discs(friends_username, conn)
@@ -162,7 +219,7 @@ def get_user_friends_bands():
     friends_list = recommend.find_user_friends(username,conn)
     friends_bands = []
     for friend in friends_list:
-        friend_bands = (friend,recommend.get_user_bands(friend, conn))
+        friend_bands = (friend,get_users_bands(friend, conn))
         friends_bands.extend(friend_bands)
 
     return jsonify({'discs': friends_bands}), 200
@@ -175,10 +232,10 @@ def get_requested_friend_bands(friends_username):
         return auth[0]
     username = auth[0]
     # ------
-    check_friends = recommend.find_specific_friends(friends_username,username,conn)
+    check_friends = find_specific_friends(friends_username,username,conn)
     if not check_friends:
         return jsonify({'message': "This user is not a friend with the specific user."}), 404
-    friend_discs = recommend.get_user_bands(friends_username, conn)
+    friend_discs = get_users_bands(friends_username, conn)
     return jsonify({'discs':friend_discs}), 200
 
 @app.route('/price/<string:disc_name>/history', methods=['GET'])
@@ -189,17 +246,17 @@ def get_web_scrape_disc_price(disc_name):
         return auth[0]
     username = auth[0]
     # ------
-    prices = recommend.disc_prices(disc_name,conn)
+    prices = disc_prices(disc_name,conn)
     return jsonify({'prices':prices}), 200
 
 @app.route('/info/discs/<string:disc_name>', methods=['GET'])
 def get_disc_info_last_price(disc_name):
-    info = recommend.disc_info_last_price(disc_name, conn)
+    info = disc_info_last_price(disc_name, conn)
     return jsonify({'disc info': info}), 200
 
 @app.route('/info/bands/<string:band_name>', methods=['GET'])
 def get_band_info(band_name):
-    info = recommend.disc_band_info(band_name, conn)
+    info = disc_band_info(band_name, conn)
     return jsonify({'disc info': info}), 200
 
 
