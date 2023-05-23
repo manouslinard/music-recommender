@@ -7,7 +7,11 @@ def find_user_friends(username, conn):
         query = """
             SELECT friend_username
             FROM user_friends
-            WHERE username = %s OR friend_username = %s
+            WHERE username = %s
+            UNION
+            SELECT username
+            FROM user_friends
+            WHERE friend_username = %s
         """
         cur.execute(query, (username, username))
         results = cur.fetchall()
