@@ -207,7 +207,7 @@ def get_user_friends_bands():
     friends_bands = []
     for friend in friends_list:
         bands = get_users_bands(friend, conn)
-        bands_list = [{'band_name': bands[0]} for band in bands]
+        bands_list = [{'band_name': band[0], 'summary': band[1]} for band in bands]
         friends_bands.append({"username":friend, "bands":bands_list})
 
     return jsonify({'friends_bands': friends_bands}), 200
@@ -220,7 +220,7 @@ def get_requested_friend_bands(friends_username):
         return auth[0]
     username = auth[0]
     # ------
-    friend = find_specific_friends(friends_username,username,conn)
+    friend = find_specific_friends(username,friends_username,conn)
     if not friend:
         return jsonify({'message': "Requested friend not found."}), 404
     friend_bands = []
@@ -236,63 +236,58 @@ def get_web_scrape_disc_price(disc_name):
     if auth[1] != 200:
         return auth[0]
     # ------
-
+    disc_name = disc_name.replace("-"," ")
     with conn.cursor() as cur:
         query = """
-        SELECT values FROM disc_prices WHERE name = %s
+        SELECT date, values FROM disc_prices WHERE LOWER(name) = LOWER(%s)
         """
         cur.execute(query, (disc_name,))
-        prices = [row[0] for row in cur.fetchall()]
+        disc_prices = cur.fetchall()
+    if not disc_prices:
+        return jsonify({'message': "Requested disc not found."}), 404
+    # print(disc_prices)
+    prices = [{"date":row[0].strftime("%Y-%m-%d"), "price":row[1]} for row in disc_prices]
 
     return jsonify({'prices': prices}), 200
 
 
 @app.route('/info/discs/<string:disc_name>', methods=['GET'])
 def get_disc_info_last_price(disc_name):
+    disc_name = disc_name.replace("-"," ")
     with conn.cursor() as cur:
         query = """
-        SELECT dp.values, b.summary
-        FROM disc_prices dp
-        JOIN Discs d ON dp.name = d.name
-        JOIN Bands b ON d.band = b.name
-        WHERE dp.name = %s AND d.name = %s
-        ORDER BY dp.date DESC
-        LIMIT 1;
+            SELECT discs.name, bands.name, bands.summary, disc_prices.values, disc_prices.date
+            FROM Discs
+            JOIN bands ON discs.band = bands.name
+            JOIN disc_prices ON disc_prices.name = discs.name
+            WHERE LOWER(discs.name) = LOWER(%s)
+            ORDER BY disc_prices.date DESC
+            LIMIT 1;
         """
-        
-        cur.execute(query, (disc_name, disc_name))
+        cur.execute(query, (disc_name,))
         info = cur.fetchone()
+        # sprint(info)
+        if not info:
+            return jsonify({'message': 'Requested disc not found'}), 404
+        response = {'disc_name': info[0], 'band': info[1], 'band_summary': info[2], 'latest_price':info[3], 'price_date':info[4].strftime("%Y-%m-%d")}
+        return jsonify({"disc":response}), 200
 
-        if info is not None:
-            values = info[0]
-            summary = info[1]
-
-            # Create a dictionary to return as JSON response
-            response = {'disc_name': disc_name, 'latest price': values, 'summary': summary}
-            return jsonify(response), 200
-        else:
-            return jsonify({'message': 'Disc information not found'}), 404
 
 @app.route('/info/bands/<string:band_name>', methods=['GET'])
 def get_band_info(band_name):
     with conn.cursor() as cur:
         query = """
-        SELECT name,summary from Bands where name = %s
+        SELECT name,summary from Bands where LOWER(name) = LOWER(%s)
         """
         cur.execute(query, (band_name,))
         info = cur.fetchone()
 
-        if info is not None:
-            values = info[0]
-            summary = info[1]
+        if not info:
+            return jsonify({'message': 'Requested band not found'}), 404
 
-            # Create a dictionary to return as JSON response
-            response = {'band_name': band_name, 'summary': summary}
-            return jsonify(response), 200
-        else:
-            return jsonify({'message': 'Band information not found'}), 404
-
-
+        # Create a dictionary to return as JSON response
+        response = {'band_name': info[0], 'summary': info[1]}
+        return jsonify(response), 200
 
 @app.route('/stats/topdiscs/<int:disc_num>', methods=['GET'])
 def get_topn_discs(disc_num):
