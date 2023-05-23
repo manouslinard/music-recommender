@@ -347,7 +347,7 @@ def plot_top_x_discs_by_quantity(conn, x=5):
     top_x_discs = top_x_discs_by_quantity(conn, x)
 
     labels = [f"{disc_name} by {disc_band} ({num_users})" for disc_name, disc_band, num_users in top_x_discs]
-    values = [num_users for disc_name, disc_band, num_users in top_x_discs]
+    values = [num_users for _, _, num_users in top_x_discs]
 
     fig, ax = plt.subplots()
     ax.pie(values, labels=labels, autopct='%1.1f%%', startangle=90)
@@ -368,21 +368,15 @@ def plot_disc_gender_distribution(conn, x=5):
     for disc_name in disc_names:
         gender_counts.append((disc_name, disc_most_gender(conn, disc_name)))
 
-    # Filter out any discs with no gender data
-    gender_counts = [g for g in gender_counts if g[1] is not None]
+    df = pd.DataFrame(gender_counts, columns=['disc_name', 'gender'])
 
-    # Count the number of users for each gender
-    gender_totals = {'M': 0, 'F': 0}
-    for disc_name, gender in gender_counts:
-        gender_totals[gender] += 1
+    gender_totals = df['gender'].value_counts().to_dict()
 
     # Create the bar chart
-    fig, ax = plt.subplots()
-    ax.bar(gender_totals.keys(), gender_totals.values())
-    ax.set_xlabel('Gender')
-    ax.set_ylabel('Number of Users')
-    ax.set_title(f'Gender Distribution of Users with Top {x} Discs by Quantity')
-
+    plt.bar(gender_totals.keys(), gender_totals.values())
+    plt.xlabel('Gender')
+    plt.ylabel('Number of Users')
+    plt.title(f'Gender Distribution of Users with Top {x} Discs by Quantity')
     plt.show()
 
 def plot_users_by_gender(conn):
@@ -394,12 +388,10 @@ def plot_users_by_gender(conn):
         FROM Users
         GROUP BY gender;
         """
-    with conn.cursor() as cur:
-        cur.execute(query)
-        results = cur.fetchall()
+    df = pd.read_sql(query, conn)
 
-    genders = ["Unknown" if row[0]=="N" else row[0] for row in results]
-    num_users = [row[1] for row in results]
+    genders = df['gender'].replace("N", "Unknown").tolist()
+    num_users = df['num_users'].tolist()
 
     plt.bar(genders, num_users)
     plt.xlabel("Gender")
@@ -411,28 +403,18 @@ def plot_user_age(conn):
     """
     Plots a line chart with the age distribution of all users.
     """
-    sql = "SELECT age FROM Users WHERE age IS NOT NULL;"
-    with conn.cursor() as cur:
-        cur.execute(sql)
-        ages = [row[0] for row in cur.fetchall()]
+    sql = "SELECT age FROM Users WHERE age >= 0;"
+    # Read the ages directly into a pandas DataFrame
+    df = pd.read_sql(sql, conn)
 
     # Count the number of users in each age group
-    age_counts = {}
-    for age in ages:
-        if age not in age_counts:
-            age_counts[age] = 1
-        else:
-            age_counts[age] += 1
-
-    # Sort the age groups by age
-    age_groups = sorted(age_counts.keys())
-    age_groups.pop(0)
+    age_counts = df['age'].value_counts().sort_index()
 
     # Plot the line chart
-    plt.plot(age_groups, [age_counts[age] for age in age_groups], 'o--')
+    plt.plot(age_counts.index, age_counts.values, 'o--')
     plt.xlabel("Age")
     # Set x-axis ticks and labels
-    plt.xticks(age_groups)
+    plt.xticks(age_counts.index)
     plt.ylabel("Number of users")
     plt.title("Age Distribution of Users")
     plt.show()
@@ -464,6 +446,8 @@ def plot_time_series(conn, discname, band):
     plt.show()
 
 if __name__ == "__main__":
+    load_dotenv()
+    band_names = os.getenv("BAND_NAMES", "coldplay").split()
     # plot_avg_user_band_age(conn, band_names)
     # plot_countries_most_music(conn)
     # plot_top_x_discs_by_quantity(conn)
