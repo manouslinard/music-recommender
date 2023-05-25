@@ -88,10 +88,10 @@ def load_api():
 
 
     create_db.load_users(conn)
-    create_db.fill_barabasi_model(conn)
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
-    recommend_all_user_discs(conn)
+    create_db.fill_barabasi_model(conn)
+    # recommend_all_user_discs(conn)
     if bool(int(os.environ.get('LOAD_PRICES', 0))):
         if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
             create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))

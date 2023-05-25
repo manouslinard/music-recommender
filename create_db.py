@@ -271,35 +271,66 @@ def fill_barabasi_model(conn, m=3):
     Define the parameters of the Barabási-Albert model.
     Parameters: m -> number of edges to attach from a new node to existing nodes
     """
-    # create a cursor object
-    cur = conn.cursor()
     # Get the usernames from the database and saves them to a list.
-    cur.execute("SELECT username FROM Users")
-    usernames = [row[0] for row in cur.fetchall()]
-    n = len(usernames)  # number of nodes in barabasi model.
-    # print(n)
-    # generate the graph
+    query = """
+        SELECT Users.username, user_has_discs.disc_name, user_has_discs.disc_band FROM Users
+        LEFT JOIN user_has_discs ON Users.username=user_has_discs.username
+    """
+    df = pd.read_sql(query, conn)
+    usernames = df['username'].unique()
+    # print(df['username'])
+
+    n = len(usernames)
     community_graph = nx.barabasi_albert_graph(n, m)
 
-    mapping = {}
-    # maps nodes to usernames.
-    for node, u in zip(community_graph, usernames):
-        mapping[node] = u
-    # DEBUG =================================================
-    # print(mapping)
-    # print("=============")
-    # print(community_graph.edges)
-    # nx.draw(community_graph, with_labels=True)
+    G = nx.Graph()
+    edges = [(usernames[e[0]], usernames[e[1]]) for e in community_graph.edges]
+    G.add_edges_from(edges)
+    # nx.draw(G, with_labels=True)
     # plt.show()
-    # ======================================================
-    # Insert the edges into the User_Friends table
-    for edge in community_graph.edges:
-        user1 = mapping[edge[0]]
-        user2 = mapping[edge[1]]
-        cur.execute("INSERT INTO User_Friends (username, friend_username) VALUES (%s, %s)", (user1, user2))
+
+    with conn.cursor() as cur:
+        for friends in G.edges:
+            cur.execute("INSERT INTO User_Friends (username, friend_username) VALUES (%s, %s)", (friends[0], friends[1]))
+        conn.commit()
     print("Filled User-Friends Table according to Barabasi Model.")
-    # Commit the changes to the database
-    conn.commit()
+
+    # adding discs feature:
+    for user in G.nodes:
+        node_data = df[df['username'] == user]
+        discs = node_data['disc_name'].tolist()
+        bands = node_data['disc_band'].tolist()
+        G.nodes[user]['discs'] = list(zip(discs, bands))
+
+    load_dotenv()
+    print("Recommending discs...")
+    for user in G.nodes:
+        d = {}
+        neighbors = list(G.adj[user].keys())
+        # print((user, d))
+        for n in neighbors:
+            discs = G.nodes[n]['discs']
+            for disc in discs:
+                if disc[0] and disc not in d:
+                    d[disc] = 1
+                elif disc[0]:
+                    d[disc] += 1
+        sorted_list = sorted(d.items(), key=lambda x: x[1], reverse=True)
+        # print(user, sorted_list)
+        rec_discs = min(len(sorted_list), int(os.getenv("NUMBER_REC_DISCS", 1)))
+        insert_query = "INSERT INTO user_rec_discs (username, disc_name, disc_band) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"
+        with conn.cursor() as cur:
+            for d in sorted_list[:rec_discs]: # gets the top rec_discs+1 dics.
+                cur.execute(insert_query, (user, d[0][0], d[0][1]))
+        conn.commit()
+    print("Discs recommended.")
 
 if __name__ == "__main__":
     print("This file is not executable and contains methods used in load_api.py. To run the project, run the load_api.py file.")
+    # conn = psycopg2.connect(
+    #     host=os.getenv("PSQL_HOST"),
+    #     database=os.getenv("PSQL_DATABASE"),
+    #     user=os.getenv("PSQL_USERNAME"),
+    #     password=os.getenv("PSQL_PASSWORD")
+    # )
+    # fill_barabasi_model(conn)
