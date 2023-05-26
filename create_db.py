@@ -8,6 +8,10 @@ import scraper.scrape as sp
 from Crypto.Cipher import AES
 from dotenv import load_dotenv
 
+import warnings
+
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable")
+
 def create_tables(conn):
     try:
         # Create a cursor object
@@ -127,6 +131,8 @@ def load_users(conn):
     df = pd.read_csv("users.csv")
     if df['username'].isnull().any():
         raise ValueError("Missing username in the CSV file.")
+    if df['password'].isnull().any():
+        raise ValueError("Missing password in the CSV file.")
     if df['age'].min() <= 10:
         raise ValueError("Invalid age in the CSV file (users should be above 10 years old).")
     if df['age'].max() > 110:
@@ -139,7 +145,7 @@ def load_users(conn):
     df['age'].fillna(-1, inplace=True)
     df.fillna("unregistered", inplace=True)
 
-    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)",
+    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
                    [(row['username'], encr(row['password']), row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
 
     conn.commit()
@@ -281,6 +287,7 @@ def fill_barabasi_model(conn, m=3):
     # print(df['username'])
 
     n = len(usernames)
+    # print(n)
     community_graph = nx.barabasi_albert_graph(n, m)
 
     G = nx.Graph()

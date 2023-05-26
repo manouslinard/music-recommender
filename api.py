@@ -3,7 +3,6 @@ from flask import Flask, jsonify, request
 import psycopg2
 from dotenv import load_dotenv
 from Crypto.Cipher import AES
-import recommend
 import stats
 import pandas as pd
 
@@ -90,6 +89,35 @@ def find_user_friends_detail(username, conn):
     users = df.to_dict('records')
     return users
 
+def get_user_discs(username, conn):
+    with conn.cursor() as cur:
+        query = """
+            SELECT user_has_discs.disc_name, discs.band
+            FROM user_has_discs
+            JOIN discs ON user_has_discs.disc_name = discs.name
+            WHERE user_has_discs.username = %s
+        """
+
+        cur.execute(query, (username,))
+        data = cur.fetchall()
+    return data
+
+def find_user_friends(username, conn):
+    with conn.cursor() as cur:
+        query = """
+            SELECT friend_username
+            FROM user_friends
+            WHERE username = %s
+            UNION
+            SELECT username
+            FROM user_friends
+            WHERE friend_username = %s
+        """
+        cur.execute(query, (username, username))
+        results = cur.fetchall()
+    merged_list = list(set([item[0] for item in results]))
+    return merged_list
+
 def find_specific_friends(username, friend_name, conn):
     friends = find_user_friends_detail(username, conn)
     for f in friends:
@@ -99,14 +127,14 @@ def find_specific_friends(username, friend_name, conn):
 
 
 @app.route('/discs', methods=['GET'])
-def get_user_discs():
+def get_user_discs_api():
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
         return auth[0]
     username = auth[0]
     # ------
-    discs = recommend.get_user_discs(username, conn)
+    discs = get_user_discs(username, conn)
     # Create a list of dictionaries with keys 'disc_name' and 'band_name'
     discs_list = [{'disc_name': disc[0], 'band': disc[1]} for disc in discs]
 
@@ -133,7 +161,14 @@ def get_user_recommend():
         return auth[0]
     username = auth[0]
     # ------
-    recommend_list = recommend.recommend_disc_user(username,conn)
+    with conn.cursor() as cur:
+        query = """
+           select disc_name, disc_band from user_rec_discs where USERNAME=%s
+        """
+        cur.execute(query, (username,))
+        results = cur.fetchall()
+        print(results)
+        recommend_list = [(item[0], item[1]) for item in results]
     discs_list = [{'disc_name': disc[0], 'band': disc[1]} for disc in recommend_list]
     return jsonify({'recommended': discs_list}), 200
 
@@ -169,10 +204,10 @@ def get_user_friends_discs():
         return auth[0]
     username = auth[0]
     # ------
-    friends_list = recommend.find_user_friends(username,conn)
+    friends_list = find_user_friends(username,conn)
     friends_discs = []
     for friend in friends_list:
-        discs = recommend.get_user_discs(friend, conn)
+        discs = get_user_discs(friend, conn)
         discs_list = [{'disc_name': disc[0], 'band': disc[1]} for disc in discs]
         friends_discs.append({"username":friend, "discs":discs_list})
 
@@ -190,7 +225,7 @@ def get_requested_friend_discs(friends_username):
     if not friend:
         return jsonify({'message': "Requested friend not found."}), 404
     friend_discs = []
-    discs = recommend.get_user_discs(friend["username"], conn)
+    discs = get_user_discs(friend["username"], conn)
     discs_list = [{'disc_name': disc[0], 'band': disc[1]} for disc in discs]
     friend_discs.append({"username":friend["username"], "discs":discs_list})
     return jsonify({'friend_discs':friend_discs}), 200
@@ -203,7 +238,7 @@ def get_user_friends_bands():
         return auth[0]
     username = auth[0]
     # ------
-    friends_list = recommend.find_user_friends(username,conn)
+    friends_list = find_user_friends(username,conn)
     friends_bands = []
     for friend in friends_list:
         bands = get_users_bands(friend, conn)

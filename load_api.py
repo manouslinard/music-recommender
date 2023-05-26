@@ -6,7 +6,6 @@ from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import create_db
 from dotenv import load_dotenv
 import os
-from recommend import recommend_all_user_discs
 
 load_dotenv()
 
@@ -91,7 +90,6 @@ def load_api():
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
     create_db.fill_barabasi_model(conn)
-    # recommend_all_user_discs(conn)
     if bool(int(os.environ.get('LOAD_PRICES', 0))):
         if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
             create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))
