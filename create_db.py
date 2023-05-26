@@ -318,13 +318,15 @@ def fill_barabasi_model(conn, m=3):
         for n in neighbors:
             discs = G.nodes[n]['discs']
             for disc in discs:
-                if disc[0] and disc not in d:
+                if disc[0] and disc not in d and disc not in G.nodes[user]['discs']:
+                    print(disc, G.nodes[user]['discs'])
                     d[disc] = 1
-                elif disc[0]:
+                elif disc[0] and disc not in G.nodes[user]['discs']: # recommends only the discs that the user does not have.
+                    print(disc, G.nodes[user]['discs'])
                     d[disc] += 1
         sorted_list = sorted(d.items(), key=lambda x: x[1], reverse=True)
         # print(user, sorted_list)
-        rec_discs = min(len(sorted_list), int(os.getenv("NUMBER_REC_DISCS", 1)))
+        rec_discs = int(os.getenv("NUMBER_REC_DISCS", 1))
         insert_query = "INSERT INTO user_rec_discs (username, disc_name, disc_band) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"
         with conn.cursor() as cur:
             for d in sorted_list[:rec_discs]: # gets the top rec_discs+1 dics.
