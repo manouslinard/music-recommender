@@ -319,10 +319,10 @@ def fill_barabasi_model(conn, m=3):
             discs = G.nodes[n]['discs']
             for disc in discs:
                 if disc[0] and disc not in d and disc not in G.nodes[user]['discs']:
-                    print(disc, G.nodes[user]['discs'])
+                    # print(disc, G.nodes[user]['discs'])
                     d[disc] = 1
                 elif disc[0] and disc not in G.nodes[user]['discs']: # recommends only the discs that the user does not have.
-                    print(disc, G.nodes[user]['discs'])
+                    # print(disc, G.nodes[user]['discs'])
                     d[disc] += 1
         sorted_list = sorted(d.items(), key=lambda x: x[1], reverse=True)
         # print(user, sorted_list)
