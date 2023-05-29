@@ -14,10 +14,22 @@ port=os.getenv("PSQL_PORT")
 load_data = bool(int(os.environ.get('LOAD_DATA', 0)))
 
 def create_db():
+    """
+    Creates a PostgreSQL database using the specified parameters.
+
+    Raises:
+        CalledProcessError: If the 'createdb' command fails.
+    """
     cmd = ["createdb", "-h", host, "-p", port, "-U", user, database]
     subprocess.run(cmd, check=True, env={"PGPASSWORD": password})
 
 def drop_db():
+    """
+    Drops a PostgreSQL database using the specified parameters.
+
+    Raises:
+        CalledProcessError: If the 'dropdb' command fails.
+    """
     cmd = ["dropdb", "-h", host, "-p", port, "-U", user, "--if-exists", database]
     subprocess.run(cmd, check=True, env={"PGPASSWORD": password})
 

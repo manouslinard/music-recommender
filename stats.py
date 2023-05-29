@@ -23,6 +23,23 @@ conn = psycopg2.connect(
 # =================================================
 
 def ARIMA_train(series,discname,band):
+    """
+    Trains an ARIMA model using the provided time series data.
+
+    Parameters:
+        series (pd.Series): The time series data.
+        discname (str): The name of the disc.
+        band (str): The name of the band.
+
+    Returns:
+        tuple: A tuple containing the predicted values, actual values, and persistence values.
+            - predicted_values (list): A list of predicted values for each persistence value.
+            - actual_values (list): A list of actual values for each persistence value.
+            - persistence_values (range): A range of persistence values.
+
+    Raises:
+        None
+    """
     # prepare data
     X = series.values
     size = int(len(X) * 0.66)
@@ -58,7 +75,18 @@ def ARIMA_train(series,discname,band):
 # Q1
 def avg_user_band_age(conn, band_name):
     """
-    Finds average age number of users that listen to an input band.
+    Calculates the average age of users who like a specific band.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        band_name (str): The name of the band.
+
+    Returns:
+        float or None: The average age of users who like the band, rounded to two decimal places.
+                       Returns None if there are no users who like the band.
+
+    Raises:
+        None
     """
     sql = """
     SELECT AVG(age) as avg_age
@@ -82,7 +110,16 @@ def avg_user_band_age(conn, band_name):
 # Q2
 def countries_most_music(conn):
     """
-    Returns a dictionary with countries and the users that each country has in the app.
+    Returns a dictionary with countries and the users that each country has in the app (excluding 'unregistered').
+    
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        dict: A dictionary where keys are country names and values are the count of users from each country.
+
+    Raises:
+        None
     """
     query = """
     SELECT country, COUNT(*) FROM Users WHERE country != 'unregistered' GROUP BY country;
@@ -94,7 +131,19 @@ def countries_most_music(conn):
 #Q3
 def band_most_listeners(conn, band_name):
     """
-    Returns the country with the most users who listen to the given band.
+    Retrieves the country with the most listeners for a specific band.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        band_name (str): The name of the band.
+
+    Returns:
+        str or None: The country with the most listeners for the specified band,
+                     or None if no data is found.
+
+    Raises:
+        None
+    
     """
     query = """
         SELECT country, COUNT(*) AS user_count
@@ -118,6 +167,17 @@ def band_most_gender(conn, band_name):
     """
     Returns the gender that the most users who listen to a specific band are.
     If the band_name does not exist, returns None.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        band_name (str): The name of the band.
+
+    Returns:
+        str or None: The gender that the most users who listen to the specified band are,
+                     or None if the band_name does not exist.
+
+    Raises:
+        None
     """
     query = """
     SELECT *
@@ -138,6 +198,16 @@ def band_most_gender(conn, band_name):
 def band_with_most_listeners(conn):
     """
     Returns the name of the band with the most listeners.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        str or None: The name of the band with the most listeners,
+                     or None if there are no bands in the database.
+
+    Raises:
+        None
     """
     query = """
     SELECT band_name, COUNT(*) AS listeners_count
@@ -155,6 +225,12 @@ def band_with_most_listeners(conn):
 def avg_disc_count(conn):
     """
     Finds the average number of discs that users have.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        float: The average number of discs per user, rounded to the nearest whole number.
     """
     query = """
         SELECT AVG(disc_count) AS avg_disc_count
@@ -172,7 +248,16 @@ def avg_disc_count(conn):
 # Q7
 def band_users_by_country(conn, band_name):
     """
-    Returns a dictionary with the countries and the users that listen to a given band.
+    Retrieves the count of users who listen to a specific band grouped by country.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        band_name (str): The name of the band.
+
+    Returns:
+        dict or None: A dictionary where the keys are country names and the values are the count of users
+            from that country who listen to the specified band. If there are no users for the band or if the band
+            name does not exist, returns None.
     """
     query = """
         SELECT country, COUNT(*) AS count
@@ -195,7 +280,15 @@ def band_users_by_country(conn, band_name):
 # Q8
 def disc_users_country(conn, disc_name):
     """
-    Returns a list of countries of the users who have the specified disc.
+    Retrieves the list of countries where users own a specific disc.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        disc_name (str): The name of the disc.
+
+    Returns:
+        list: A list of country names where users own the specified disc. If no users own the disc
+            or if the disc name does not exist, an empty list is returned.
     """
     query = """
     SELECT country
@@ -214,6 +307,14 @@ def disc_users_country(conn, disc_name):
 def num_users_with_disc(conn, disc_name):
     """
     Returns the number of users that have a given disc.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        disc_name (str): The name of the disc.
+
+    Returns:
+        int: The number of users that have the specified disc. If no users have the disc or if
+            the disc name does not exist, 0 is returned.
     """
     query = """
     SELECT COUNT(DISTINCT username)
@@ -229,6 +330,15 @@ def num_users_with_disc(conn, disc_name):
 def disc_most_gender(conn, disc_name):
     """
     Finds the gender that the most users who have the given disc belong to.
+    If the disc name does not exist or there are no users who own the disc, returns None.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        disc_name (str): The name of the disc.
+
+    Returns:
+        str or None: The gender that has the most users who own the specified disc.
+            If the disc name does not exist or there are no users who own the disc, returns None.
     """
     sql = """
     SELECT gender, COUNT(*) as count
@@ -250,8 +360,16 @@ def most_listened_bands_by_country(conn):
     """
     Returns a dictionary with the countries as keys and as values a tuple with the most listened band by users in that 
     country and the number of users who have listened to that band.
-    """
+    If there are multiple bands with the same highest listen count in a country, only one of them is included.
+    
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
 
+    Returns:
+        dict: A dictionary mapping each country to the most listened band in that country.
+            The keys are country names (str) and the values are tuples containing the band name (str)
+            and the listen count (int).
+    """
     query = """
         SELECT Users.country, Bands.name, COUNT(*) as listens
         FROM Users JOIN user_has_discs ON Users.username = user_has_discs.username
@@ -271,7 +389,15 @@ def most_listened_bands_by_country(conn):
 # Q12
 def top_x_discs_by_quantity(conn, x=5):
     """
-    Returns a list of the top discs in quantity that the users have.
+    Returns a list of the top x(=5) discs in quantity that the users have.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        x (int): The number of top discs to return. Defaults to 5.
+
+    Returns:
+        list: A list of tuples representing the top x discs. Each tuple contains the disc name (str),
+            the band name (str), and the number of users (int) who have that disc.
     """
     query = f"""
         SELECT disc_name, disc_band, COUNT(*) AS num_users
@@ -307,7 +433,14 @@ def top_x_discs_by_quantity(conn, x=5):
 
 def plot_avg_user_band_age(conn, band_names):
     """
-    Plots the average age of users for a list of bands.
+    Plots the average age of users for a list of bands in a bar plot.
+    
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        band_names (list): A list of band names (str) to plot the average user age for.
+
+    Returns:
+        None
     """
     avg_ages = []
     band_names_copy = []
@@ -328,6 +461,12 @@ def plot_avg_user_band_age(conn, band_names):
 def plot_countries_most_music(conn):
     """
     Plots a line chart with the number of users per country.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        None
     """
     country_dict = countries_most_music(conn)
     countries = list(country_dict.keys())
@@ -343,6 +482,13 @@ def plot_countries_most_music(conn):
 def plot_top_x_discs_by_quantity(conn, x=5):
     """
     Generates a pie chart of the top X discs in quantity that the users have.
+    
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        x (int): The number of top discs to include in the chart. Defaults to 5.
+
+    Returns:
+        None
     """
     top_x_discs = top_x_discs_by_quantity(conn, x)
 
@@ -361,6 +507,13 @@ def plot_top_x_discs_by_quantity(conn, x=5):
 def plot_disc_gender_distribution(conn, x=5):
     """
     Generates a bar chart showing the gender distribution of the users who have the top x discs by quantity.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        x (int): The number of top discs to consider. Defaults to 5.
+
+    Returns:
+        None
     """
     top_discs = top_x_discs_by_quantity(conn, x)
     disc_names = [d[0] for d in top_discs]
@@ -382,6 +535,12 @@ def plot_disc_gender_distribution(conn, x=5):
 def plot_users_by_gender(conn):
     """
     Plots a bar chart with the number of users per gender.
+    
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        None
     """
     query = """
         SELECT gender, COUNT(*) AS num_users
@@ -402,6 +561,12 @@ def plot_users_by_gender(conn):
 def plot_user_age(conn):
     """
     Plots a line chart with the age distribution of all users.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+
+    Returns:
+        None
     """
     sql = "SELECT age FROM Users WHERE age >= 0;"
     # Read the ages directly into a pandas DataFrame
@@ -420,6 +585,17 @@ def plot_user_age(conn):
     plt.show()
 
 def plot_time_series(conn, discname, band):
+    """
+    Plots a time series of disc prices for a specific disc by a band.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The PostgreSQL database connection object.
+        discname (str): The name of the disc.
+        band (str): The name of the band.
+
+    Returns:
+        None
+    """
     # generate a new time series for this disc
     sql = f"SELECT date,values FROM disc_prices as d WHERE d.band='{band}' and d.name='{discname}'"
     df = pd.read_sql_query(sql, conn)

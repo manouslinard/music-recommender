@@ -20,6 +20,16 @@ conn = psycopg2.connect(
 
 # Database query to check if the username and password match
 def check_credentials(username, password):
+    """
+    Checks if the provided username and password match the credentials in the database.
+
+    Args:
+        username (str): The username to check.
+        password (str): The password to check.
+
+    Returns:
+        bool: True if the credentials are valid, False otherwise.
+    """
     with conn.cursor() as cur:
         query = "SELECT password FROM users WHERE username=%s"
         cur.execute(query, (username,))
@@ -40,6 +50,14 @@ def check_credentials(username, password):
     return password == decrypted_string
 
 def authenticate():
+    """
+    Performs authentication by checking the provided username and password against the credentials in the database.
+
+    Returns:
+        tuple: A tuple containing the authenticated username and the HTTP status code.
+               The username is a string if authentication is successful, otherwise it is an error message.
+               The HTTP status code is an integer indicating the result of the authentication.
+    """
     auth_fail_msg = 'Authentication failed'
     auth = request.authorization
     if not auth:
@@ -56,6 +74,17 @@ def authenticate():
     return username, 200
 
 def get_users_bands(username, conn):
+    """
+    Retrieves the bands liked by a specific user.
+
+    Args:
+        username (str): The username of the user.
+        conn: The database connection.
+
+    Returns:
+        list: A list of tuples representing the bands liked by the user.
+              Each tuple contains the band name and the band summary.
+    """
     with conn.cursor() as cur:
         query = """
             SELECT Bands.name, Bands.summary
@@ -71,6 +100,24 @@ def get_users_bands(username, conn):
 
 
 def find_user_friends_detail(username, conn):
+    """
+    Retrieves detailed information about the friends of a specific user.
+
+    Args:
+        username (str): The username of the user.
+        conn: The database connection.
+
+    Returns:
+        list: A list of dictionaries representing the friends of the user.
+              Each dictionary contains the following information:
+              - 'username': The username of the friend.
+              - 'first_name': The first name of the friend.
+              - 'last_name': The last name of the friend.
+              - 'country': The country of the friend.
+              - 'gender': The gender of the friend.
+              - 'age': The age of the friend. If the age is -1, it is replaced with 'unregistered'.
+                If the gender is 'N', it is replaced with 'unregistered'.
+    """
     query = """
         SELECT u.username, u.first_name, u.last_name, u.country, u.gender, u.age
         FROM user_friends uf
@@ -90,6 +137,17 @@ def find_user_friends_detail(username, conn):
     return users
 
 def get_user_discs(username, conn):
+    """
+    Retrieves the discs owned by a specific user.
+
+    Args:
+        username (str): The username of the user.
+        conn: The database connection.
+
+    Returns:
+        list: A list of tuples representing the discs owned by the user.
+              Each tuple contains the disc name and the band associated with the disc.
+    """
     with conn.cursor() as cur:
         query = """
             SELECT user_has_discs.disc_name, discs.band
@@ -103,6 +161,16 @@ def get_user_discs(username, conn):
     return data
 
 def find_user_friends(username, conn):
+    """
+    Retrieves the friends of a specific user.
+
+    Args:
+        username (str): The username of the user.
+        conn: The database connection.
+
+    Returns:
+        list: A list of usernames representing the friends of the user.
+    """
     with conn.cursor() as cur:
         query = """
             SELECT friend_username
@@ -119,6 +187,18 @@ def find_user_friends(username, conn):
     return merged_list
 
 def find_specific_friends(username, friend_name, conn):
+    """
+    Retrieves detailed information about a specific friend of a user.
+
+    Args:
+        username (str): The username of the user.
+        friend_name (str): The username of the specific friend.
+        conn: The database connection.
+
+    Returns:
+        dict or None: A dictionary containing the detailed information about the friend,
+                      or None if the friend is not found.
+    """
     friends = find_user_friends_detail(username, conn)
     for f in friends:
         if friend_name == f["username"]:
@@ -128,6 +208,12 @@ def find_specific_friends(username, friend_name, conn):
 
 @app.route('/discs', methods=['GET'])
 def get_user_discs_api():
+    """
+    Retrieves the discs of the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the user's discs.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -143,6 +229,12 @@ def get_user_discs_api():
 
 @app.route('/bands', methods=['GET'])
 def get_user_bands():
+    """
+    Retrieves the bands liked by the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the user's bands.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -155,6 +247,12 @@ def get_user_bands():
 
 @app.route('/recommend', methods=['GET'])
 def get_user_recommend():
+    """
+    Retrieves the recommended discs for the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the recommended discs.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -174,6 +272,12 @@ def get_user_recommend():
 
 @app.route('/friends', methods=['GET'])
 def get_user_friends():
+    """
+    Retrieves the friends of the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the user's friends.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -185,6 +289,15 @@ def get_user_friends():
 
 @app.route('/friends/<string:friends_username>', methods=['GET'])
 def get_requested_friend(friends_username):
+    """
+    Retrieves detailed information about a specific friend of the authenticated user.
+
+    Args:
+        friends_username (str): The username of the specific friend.
+
+    Returns:
+        JSON response: A JSON response containing the detailed information about the friend.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -198,6 +311,12 @@ def get_requested_friend(friends_username):
 
 @app.route('/discs/friends', methods=['GET'])
 def get_user_friends_discs():
+    """
+    Retrieves the discs of the friends of the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the discs of the user's friends.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -215,6 +334,15 @@ def get_user_friends_discs():
 
 @app.route('/discs/friends/<string:friends_username>', methods=['GET'])
 def get_requested_friend_discs(friends_username):
+    """
+    Retrieves the discs of a specific friend of the authenticated user.
+
+    Args:
+        friends_username (str): The username of the specific friend.
+
+    Returns:
+        JSON response: A JSON response containing the discs of the friend.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -232,6 +360,12 @@ def get_requested_friend_discs(friends_username):
 
 @app.route('/bands/friends', methods=['GET'])
 def get_user_friends_bands():
+    """
+    Retrieves the bands liked by the friends of the authenticated user.
+
+    Returns:
+        JSON response: A JSON response containing the bands of the user's friends.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -249,6 +383,15 @@ def get_user_friends_bands():
 
 @app.route('/bands/friends/<string:friends_username>', methods=['GET'])
 def get_requested_friend_bands(friends_username):
+    """
+    Retrieves the bands liked by a specific friend of the authenticated user.
+
+    Args:
+        friends_username (str): The username of the specific friend.
+
+    Returns:
+        JSON response: A JSON response containing the bands of the friend.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -266,6 +409,15 @@ def get_requested_friend_bands(friends_username):
 
 @app.route('/price/<string:disc_name>/history', methods=['GET'])
 def get_web_scrape_disc_price(disc_name):
+    """
+    Retrieves the price history of a specific disc.
+
+    Args:
+        disc_name (str): The name of the disc.
+
+    Returns:
+        JSON response: A JSON response containing the price history of the disc.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -288,6 +440,15 @@ def get_web_scrape_disc_price(disc_name):
 
 @app.route('/info/discs/<string:disc_name>', methods=['GET'])
 def get_disc_info_last_price(disc_name):
+    """
+    Retrieves the information and last recorded price of a specific disc.
+
+    Args:
+        disc_name (str): The name of the disc.
+
+    Returns:
+        JSON response: A JSON response containing the disc information and last recorded price.
+    """
     disc_name = disc_name.replace("-"," ")
     with conn.cursor() as cur:
         query = """
@@ -310,6 +471,15 @@ def get_disc_info_last_price(disc_name):
 
 @app.route('/info/bands/<string:band_name>', methods=['GET'])
 def get_band_info(band_name):
+    """
+    Retrieves the information of a specific band.
+
+    Args:
+        band_name (str): The name of the band.
+
+    Returns:
+        JSON response: A JSON response containing the band information.
+    """
     with conn.cursor() as cur:
         query = """
         SELECT name,summary from Bands where LOWER(name) = LOWER(%s)
@@ -326,6 +496,15 @@ def get_band_info(band_name):
 
 @app.route('/stats/topdiscs/<int:disc_num>', methods=['GET'])
 def get_topn_discs(disc_num):
+    """
+    Retrieves the top N discs based on quantity.
+
+    Args:
+        disc_num (int): The number of top discs to retrieve.
+
+    Returns:
+        JSON response: A JSON response containing the top N discs based on quantity.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -338,6 +517,12 @@ def get_topn_discs(disc_num):
 
 @app.route('/stats/bands/mostbands', methods=['GET'])
 def get_mostbands_countries():
+    """
+    Retrieves the most listened bands by country.
+
+    Returns:
+        JSON response: A JSON response containing the most listened bands by country.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -349,6 +534,15 @@ def get_mostbands_countries():
 
 @app.route('/stats/discs/mostgender/<string:disc_name>', methods=['GET'])
 def disc_most_gender(disc_name):
+    """
+    Retrieves the most listened gender for a specific disc.
+
+    Args:
+        disc_name (str): The name of the disc.
+
+    Returns:
+        JSON response: A JSON response containing the most listened gender for the disc.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -363,6 +557,15 @@ def disc_most_gender(disc_name):
 
 @app.route('/stats/discs/usercount/<string:disc_name>', methods=['GET'])
 def disc_user_count(disc_name):
+    """
+    Retrieves the number of users who have a specific disc.
+
+    Args:
+        disc_name (str): The name of the disc.
+
+    Returns:
+        JSON response: A JSON response containing the number of users who have the disc.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -377,6 +580,15 @@ def disc_user_count(disc_name):
 
 @app.route('/stats/discs/heritage/<string:disc_name>', methods=['GET'])
 def disc_user_country(disc_name):
+    """
+    Retrieves the country heritage of users who have a specific disc.
+
+    Args:
+        disc_name (str): The name of the disc.
+
+    Returns:
+        JSON response: A JSON response containing the country heritage of users who have the disc.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -390,6 +602,15 @@ def disc_user_country(disc_name):
 
 @app.route('/stats/bands/heritage/<string:band_name>', methods=['GET'])
 def band_user_country(band_name):
+    """
+    Retrieves the country heritage of users who listen to a specific band.
+
+    Args:
+        band_name (str): The name of the band.
+
+    Returns:
+        JSON response: A JSON response containing the country heritage of users who listen to the band.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -398,7 +619,6 @@ def band_user_country(band_name):
     band_name = band_name.replace("-"," ")
     r = stats.band_users_by_country(conn, band_name)
     # print(r)
-    # TODO: fix band not exist in stats.py
     if not r:
         return jsonify({'message': "Requested band not found."}), 404
     bands_list = [{'country': b, 'user_number': r[b]} for b in r]
@@ -406,6 +626,12 @@ def band_user_country(band_name):
 
 @app.route('/stats/mostband', methods=['GET'])
 def most_band():
+    """
+    Retrieves the band with the most listeners.
+
+    Returns:
+        JSON response: A JSON response containing the band with the most listeners.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -416,6 +642,15 @@ def most_band():
 
 @app.route('/stats/mostgender/<string:band_name>', methods=['GET'])
 def band_most_gender(band_name):
+    """
+    Retrieves the most listened gender for a specific band.
+
+    Args:
+        band_name (str): The name of the band.
+
+    Returns:
+        JSON response: A JSON response containing the most listened gender for the band.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -430,6 +665,15 @@ def band_most_gender(band_name):
 
 @app.route('/stats/bandcountry/<string:band_name>', methods=['GET'])
 def band_most_user_heritage(band_name):
+    """
+    Retrieves the country with the most listeners for a specific band.
+
+    Args:
+        band_name (str): The name of the band.
+
+    Returns:
+        JSON response: A JSON response containing the country with the most listeners for the band.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -444,6 +688,12 @@ def band_most_user_heritage(band_name):
 
 @app.route('/stats/countries/mostmusic', methods=['GET'])
 def most_music_countries():
+    """
+    Retrieves the countries with the most music listeners.
+
+    Returns:
+        JSON response: A JSON response containing the countries with the most music listeners.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -456,6 +706,13 @@ def most_music_countries():
 
 @app.route('/stats/average/discs', methods=['GET'])
 def average_disc():
+    """
+    Retrieves the average number of discs per user.
+
+    Returns:
+        JSON response: A JSON response containing the average number of discs per user.
+
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:
@@ -466,6 +723,15 @@ def average_disc():
 
 @app.route('/stats/average/age/<string:band_name>', methods=['GET'])
 def average_user_band_age(band_name):
+    """
+    Retrieves the average age of users who listen to a specific band.
+
+    Args:
+        band_name (str): The name of the band.
+
+    Returns:
+        JSON response: A JSON response containing the average age of users who listen to the band.
+    """
     # authentication -----
     auth = authenticate()
     if auth[1] != 200:

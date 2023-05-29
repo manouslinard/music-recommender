@@ -14,6 +14,18 @@ YOUR_API_KEY = os.getenv("YOUR_API_KEY")
 band_names = os.getenv("BAND_NAMES", "coldplay").split()
 
 def find_info_band(band_name: str) -> dict:
+    """
+    Retrieves information about a band.
+
+    Parameters:
+        band_name (str): The name of the band to search for.
+
+    Returns:
+        dict: A dictionary containing the band's name and summary.
+
+    Raises:
+        None
+    """
     band_url = f"http://ws.audioscrobbler.com/2.0/?method=artist.getinfo&artist={band_name}&api_key={YOUR_API_KEY}&format=json"
     response = requests.get(band_url)
     json_data = json.loads(response.text)
@@ -23,6 +35,18 @@ def find_info_band(band_name: str) -> dict:
 
 
 def find_top_albums(band_name: str) -> list:
+    """
+    Retrieves the top albums by a band using the Discogs API.
+
+    Parameters:
+        band_name (str): The name of the band to search for.
+
+    Returns:
+        list: A list of album titles.
+
+    Raises:
+        None
+    """
     consumer_key = os.getenv("DISCOGS_KEY")
     consumer_secret = os.getenv("DISCOGS_SECRET")
 

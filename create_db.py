@@ -13,6 +13,18 @@ import warnings
 warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable")
 
 def create_tables(conn):
+    """
+    Creates the necessary tables in the database if they do not already exist.
+
+    Args:
+        conn (object): The database connection object.
+
+    Raises:
+        Exception: If an error occurs during the table creation.
+
+    Returns:
+        None
+    """
     try:
         # Create a cursor object
         cursor = conn.cursor()
@@ -124,6 +136,18 @@ def create_tables(conn):
         print(f"Error: {e}")
 
 def load_users(conn):
+    """
+    Loads user data from a CSV file into a PostgreSQL database.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The connection object to the PostgreSQL database.
+
+    Raises:
+        ValueError: If the CSV file contains any missing or invalid data.
+
+    Returns:
+        None
+    """
     # Create a cursor object
     cursor = conn.cursor()
 
@@ -152,6 +176,18 @@ def load_users(conn):
     print("Data inserted successfully.")
 
 def encr(password):
+    """
+    Encrypts a password
+
+    Parameters:
+        password (str): The password to be encrypted.
+
+    Returns:
+        bytes: The encrypted password as bytes.
+
+    Raises:
+        None
+    """
     load_dotenv()
     key = os.getenv('SECRET_KEY', '1234567890123456').encode('utf-8')
     # Input string to be encrypted (padding to adjust length)
@@ -161,6 +197,19 @@ def encr(password):
     return cipher.encrypt(input_string.encode())
 
 def load_prices_webscrape(conn, MAX_DISCS=-1):
+    """
+    Loads disc prices from Discogs using web scraping and inserts them into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        MAX_DISCS (int): The maximum number of discs to load prices for. Defaults to -1, which means no limit.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cursor = conn.cursor()
     cursor.execute("SELECT band_id,discs.band,discs.name FROM discs JOIN bands ON discs.band=bands.name")
     rows = cursor.fetchall()
@@ -184,6 +233,20 @@ def load_prices_webscrape(conn, MAX_DISCS=-1):
             load_prices(conn,disc_name,band_name)
 
 def load_prices(conn,name_of_disc:str = None, band_of_disk:str= None):
+    """
+    Loads disc prices into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        name_of_disc (str): The name of the disc to load prices for. Defaults to None.
+        band_of_disk (str): The band associated with the disc. Defaults to None.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cursor = conn.cursor()
     cursor.execute("SELECT name, band FROM discs")
     discs = cursor.fetchall()
@@ -202,6 +265,22 @@ def load_prices(conn,name_of_disc:str = None, band_of_disk:str= None):
     
 
 def prices_insertion(conn,cursor,df,name,band):
+    """
+    Inserts disc prices into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        cursor (object): The database cursor object.
+        df (DataFrame): The DataFrame containing the disc prices.
+        name (str): The name of the disc.
+        band (str): The band associated with the disc.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     df = pd.read_csv("File_series.csv")
     df['date'] = pd.to_datetime(df['date'])
 
@@ -232,6 +311,18 @@ def prices_insertion(conn,cursor,df,name,band):
 
 
 def insert_user_has_disc(conn):
+    """
+    Inserts random disc ownerships for each user into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cur = conn.cursor()
 
     # Select all usernames from the users table
@@ -253,6 +344,18 @@ def insert_user_has_disc(conn):
 
 
 def insert_user_likes_band(conn):
+    """
+    Inserts random band preferences for each user into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cur = conn.cursor()
 
     # Select all usernames from the users table
@@ -263,7 +366,7 @@ def insert_user_likes_band(conn):
     cur.execute("SELECT name FROM bands")
     bands = cur.fetchall()
 
-    # Insert random disc ownerships for each user
+    # Insert random disc preferences for each user
     for user in users:
         for i in range(random.randint(0, 5)):
             band = random.choice(bands)
