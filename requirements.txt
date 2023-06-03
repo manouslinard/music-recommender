@@ -12,3 +12,5 @@ webdriver-manager
 beautifulsoup4
 seaborn
 scipy
+flask
+PyCrypto

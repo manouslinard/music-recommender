@@ -38,7 +38,11 @@ DISCOGS_KEY=YOUR_DISCOGS_KEY
 DISCOGS_SECRET=YOUR_DISCOGS_SECRET
 WEB_SCRAPE_PRICES=1
 MAX_DISC_SCRAPE=-1
+NUMBER_REC_DISCS=1
+SECRET_KEY=YOUR_SECRET_KEY
 ```
+The secret key is a sting used for user password encryption. This should have exact length 16, 24 or 32 characters. Do not change it when saving the users to database and then retrieving them in api.
+<br>
 In the BAND_NAMES variable, you declare the bands that you want to get data for (these are the bands saved in the db).
 <br>
 If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
@@ -46,6 +50,8 @@ If you dont want to insert the ready-users from csv to db, set LOAD_DATA=0.
 If you want to load the prices of csv file, set LOAD_PRICES=1 (it is recommended to do this with not a lot of bands, which are declared in the top of load_api.py).
 <br>
 If you want to load prices from webscraping discogs, both LOAD_DATA and WEB_SCRAPE_PRICES should be equal to 1. If also you want to have a max limit of discs scraped per band, set MAX_DISC_SCRAPE to any positive number you want (this positive number is also the max limit).
+<br>
+NUMBER_REC_DISCS is the number of discs that will be recommended to each user.
 
 ---
 ## Users.csv file:
@@ -100,3 +106,11 @@ The scrape.py scrapes prices from [discogs.com](https://www.discogs.com/). To ge
 ```
 python3 scrape.py
 ```
+---
+## Flask API:
+
+To run the flask api, run (from root directory):
+```
+python3 api.py
+```
+The api runs in [localhost:5000](http://localhost:5000/).You can see more about the API endpoints in this [link](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).

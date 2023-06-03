@@ -1,11 +1,30 @@
 import random
+import os
 import pandas as pd
 from scipy.stats.mstats import winsorize
 import networkx as nx
 import matplotlib.pyplot as plt
 import scraper.scrape as sp
+from Crypto.Cipher import AES
+from dotenv import load_dotenv
+
+import warnings
+
+warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy connectable")
 
 def create_tables(conn):
+    """
+    Creates the necessary tables in the database if they do not already exist.
+
+    Args:
+        conn (object): The database connection object.
+
+    Raises:
+        Exception: If an error occurs during the table creation.
+
+    Returns:
+        None
+    """
     try:
         # Create a cursor object
         cursor = conn.cursor()
@@ -15,6 +34,7 @@ def create_tables(conn):
             """
             CREATE TABLE IF NOT EXISTS Users (
                 username VARCHAR(50) PRIMARY KEY,
+                password TEXT NOT NULL,
                 first_name VARCHAR(50) NOT NULL,
                 last_name VARCHAR(50) NOT NULL,
                 gender CHAR,
@@ -79,6 +99,18 @@ def create_tables(conn):
                 band VARCHAR(50) NOT NULL,
                 FOREIGN KEY (name,band) REFERENCES Discs (name,band)
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS user_rec_discs (
+                username VARCHAR(50),
+                disc_name VARCHAR(250),
+                disc_band VARCHAR(50),
+                CONSTRAINT pk_user_rec_discs PRIMARY KEY (username, disc_name, disc_band),
+                CONSTRAINT fk_user_rec_discs_username FOREIGN KEY (username)
+                    REFERENCES users (username),
+                CONSTRAINT fk_user_rec_discs_disc FOREIGN KEY (disc_name, disc_band)
+                    REFERENCES discs (name, band)
+            )
             """
         )
         foreign_keys = """
@@ -104,6 +136,18 @@ def create_tables(conn):
         print(f"Error: {e}")
 
 def load_users(conn):
+    """
+    Loads user data from a CSV file into a PostgreSQL database.
+
+    Parameters:
+        conn (psycopg2.extensions.connection): The connection object to the PostgreSQL database.
+
+    Raises:
+        ValueError: If the CSV file contains any missing or invalid data.
+
+    Returns:
+        None
+    """
     # Create a cursor object
     cursor = conn.cursor()
 
@@ -111,6 +155,8 @@ def load_users(conn):
     df = pd.read_csv("users.csv")
     if df['username'].isnull().any():
         raise ValueError("Missing username in the CSV file.")
+    if df['password'].isnull().any():
+        raise ValueError("Missing password in the CSV file.")
     if df['age'].min() <= 10:
         raise ValueError("Invalid age in the CSV file (users should be above 10 years old).")
     if df['age'].max() > 110:
@@ -123,13 +169,47 @@ def load_users(conn):
     df['age'].fillna(-1, inplace=True)
     df.fillna("unregistered", inplace=True)
 
-    cursor.executemany("INSERT INTO users (username, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s)",
-                   [(row['username'], row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
+    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                   [(row['username'], encr(row['password']), row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
 
     conn.commit()
     print("Data inserted successfully.")
 
+def encr(password):
+    """
+    Encrypts a password
+
+    Parameters:
+        password (str): The password to be encrypted.
+
+    Returns:
+        bytes: The encrypted password as bytes.
+
+    Raises:
+        None
+    """
+    load_dotenv()
+    key = os.getenv('SECRET_KEY', '1234567890123456').encode('utf-8')
+    # Input string to be encrypted (padding to adjust length)
+    input_string = password.rjust(32)
+    # Encrypt the string
+    cipher = AES.new(key)
+    return cipher.encrypt(input_string.encode())
+
 def load_prices_webscrape(conn, MAX_DISCS=-1):
+    """
+    Loads disc prices from Discogs using web scraping and inserts them into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        MAX_DISCS (int): The maximum number of discs to load prices for. Defaults to -1, which means no limit.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cursor = conn.cursor()
     cursor.execute("SELECT band_id,discs.band,discs.name FROM discs JOIN bands ON discs.band=bands.name")
     rows = cursor.fetchall()
@@ -153,6 +233,20 @@ def load_prices_webscrape(conn, MAX_DISCS=-1):
             load_prices(conn,disc_name,band_name)
 
 def load_prices(conn,name_of_disc:str = None, band_of_disk:str= None):
+    """
+    Loads disc prices into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        name_of_disc (str): The name of the disc to load prices for. Defaults to None.
+        band_of_disk (str): The band associated with the disc. Defaults to None.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cursor = conn.cursor()
     cursor.execute("SELECT name, band FROM discs")
     discs = cursor.fetchall()
@@ -171,6 +265,22 @@ def load_prices(conn,name_of_disc:str = None, band_of_disk:str= None):
     
 
 def prices_insertion(conn,cursor,df,name,band):
+    """
+    Inserts disc prices into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+        cursor (object): The database cursor object.
+        df (DataFrame): The DataFrame containing the disc prices.
+        name (str): The name of the disc.
+        band (str): The band associated with the disc.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     df = pd.read_csv("File_series.csv")
     df['date'] = pd.to_datetime(df['date'])
 
@@ -201,6 +311,18 @@ def prices_insertion(conn,cursor,df,name,band):
 
 
 def insert_user_has_disc(conn):
+    """
+    Inserts random disc ownerships for each user into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cur = conn.cursor()
 
     # Select all usernames from the users table
@@ -222,6 +344,18 @@ def insert_user_has_disc(conn):
 
 
 def insert_user_likes_band(conn):
+    """
+    Inserts random band preferences for each user into the database.
+
+    Parameters:
+        conn (object): The database connection object.
+
+    Returns:
+        None
+
+    Raises:
+        None
+    """
     cur = conn.cursor()
 
     # Select all usernames from the users table
@@ -232,7 +366,7 @@ def insert_user_likes_band(conn):
     cur.execute("SELECT name FROM bands")
     bands = cur.fetchall()
 
-    # Insert random disc ownerships for each user
+    # Insert random disc preferences for each user
     for user in users:
         for i in range(random.randint(0, 5)):
             band = random.choice(bands)
@@ -246,35 +380,69 @@ def fill_barabasi_model(conn, m=3):
     Define the parameters of the Barabási-Albert model.
     Parameters: m -> number of edges to attach from a new node to existing nodes
     """
-    # create a cursor object
-    cur = conn.cursor()
     # Get the usernames from the database and saves them to a list.
-    cur.execute("SELECT username FROM Users")
-    usernames = [row[0] for row in cur.fetchall()]
-    n = len(usernames)  # number of nodes in barabasi model.
+    query = """
+        SELECT Users.username, user_has_discs.disc_name, user_has_discs.disc_band FROM Users
+        LEFT JOIN user_has_discs ON Users.username=user_has_discs.username
+    """
+    df = pd.read_sql(query, conn)
+    usernames = df['username'].unique()
+    # print(df['username'])
+
+    n = len(usernames)
     # print(n)
-    # generate the graph
     community_graph = nx.barabasi_albert_graph(n, m)
 
-    mapping = {}
-    # maps nodes to usernames.
-    for node, u in zip(community_graph, usernames):
-        mapping[node] = u
-    # DEBUG =================================================
-    # print(mapping)
-    # print("=============")
-    # print(community_graph.edges)
-    # nx.draw(community_graph, with_labels=True)
+    G = nx.Graph()
+    edges = [(usernames[e[0]], usernames[e[1]]) for e in community_graph.edges]
+    G.add_edges_from(edges)
+    # nx.draw(G, with_labels=True)
     # plt.show()
-    # ======================================================
-    # Insert the edges into the User_Friends table
-    for edge in community_graph.edges:
-        user1 = mapping[edge[0]]
-        user2 = mapping[edge[1]]
-        cur.execute("INSERT INTO User_Friends (username, friend_username) VALUES (%s, %s)", (user1, user2))
+
+    with conn.cursor() as cur:
+        for friends in G.edges:
+            cur.execute("INSERT INTO User_Friends (username, friend_username) VALUES (%s, %s)", (friends[0], friends[1]))
+        conn.commit()
     print("Filled User-Friends Table according to Barabasi Model.")
-    # Commit the changes to the database
-    conn.commit()
+
+    # adding discs feature:
+    for user in G.nodes:
+        node_data = df[df['username'] == user]
+        discs = node_data['disc_name'].tolist()
+        bands = node_data['disc_band'].tolist()
+        G.nodes[user]['discs'] = list(zip(discs, bands))
+
+    load_dotenv()
+    print("Recommending discs...")
+    for user in G.nodes:
+        d = {}
+        neighbors = list(G.adj[user].keys())
+        # print((user, d))
+        for n in neighbors:
+            discs = G.nodes[n]['discs']
+            for disc in discs:
+                if disc[0] and disc not in d and disc not in G.nodes[user]['discs']:
+                    # print(disc, G.nodes[user]['discs'])
+                    d[disc] = 1
+                elif disc[0] and disc not in G.nodes[user]['discs']: # recommends only the discs that the user does not have.
+                    # print(disc, G.nodes[user]['discs'])
+                    d[disc] += 1
+        sorted_list = sorted(d.items(), key=lambda x: x[1], reverse=True)
+        # print(user, sorted_list)
+        rec_discs = int(os.getenv("NUMBER_REC_DISCS", 1))
+        insert_query = "INSERT INTO user_rec_discs (username, disc_name, disc_band) VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"
+        with conn.cursor() as cur:
+            for d in sorted_list[:rec_discs]: # gets the top rec_discs+1 dics.
+                cur.execute(insert_query, (user, d[0][0], d[0][1]))
+        conn.commit()
+    print("Discs recommended.")
 
 if __name__ == "__main__":
     print("This file is not executable and contains methods used in load_api.py. To run the project, run the load_api.py file.")
+    # conn = psycopg2.connect(
+    #     host=os.getenv("PSQL_HOST"),
+    #     database=os.getenv("PSQL_DATABASE"),
+    #     user=os.getenv("PSQL_USERNAME"),
+    #     password=os.getenv("PSQL_PASSWORD")
+    # )
+    # fill_barabasi_model(conn)
