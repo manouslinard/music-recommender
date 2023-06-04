@@ -4,6 +4,7 @@ import re
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import create_db
+from genetic import load_db_wanted_knapsack
 from dotenv import load_dotenv
 import os
 
@@ -114,14 +115,20 @@ def load_api():
     create_db.insert_user_has_disc(conn)
     create_db.insert_user_likes_band(conn)
     create_db.fill_barabasi_model(conn)
+    create_db.fill_user_wants_discs(conn)
     if bool(int(os.environ.get('LOAD_PRICES', 0))):
         if bool(int(os.environ.get('WEB_SCRAPE_PRICES', 0))):
             create_db.load_prices_webscrape(conn, int(os.environ.get('MAX_DISC_SCRAPE', -1)))
         else:
             print("Loading synthetic data...")
             create_db.load_prices(conn)
+        population_size = int(os.environ.get('POPULATION_SIZE', 5))
+        gen_limit = int(os.environ.get('GENERATION_LIMIT', 10))
+        load_db_wanted_knapsack(conn, population_size, gen_limit)
     else:
-        print("Prices not inserted.")
+        print("Prices not inserted & no execution of genetic algorithm.")
+
+    # user has a price, disc have a price.
 
 
     # Commit the transaction and close the cursor and connection

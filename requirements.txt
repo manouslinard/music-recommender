@@ -14,3 +14,4 @@ seaborn
 scipy
 flask
 PyCrypto
+scikit-opt

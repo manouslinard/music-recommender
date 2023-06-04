@@ -40,7 +40,8 @@ def create_tables(conn):
                 gender CHAR,
                 country VARCHAR(50),
                 age INTEGER,
-                phone VARCHAR(100) NOT NULL
+                phone VARCHAR(100) NOT NULL,
+                money FLOAT
             )
             """,
             """
@@ -111,6 +112,19 @@ def create_tables(conn):
                 CONSTRAINT fk_user_rec_discs_disc FOREIGN KEY (disc_name, disc_band)
                     REFERENCES discs (name, band)
             )
+            """,
+            """
+            CREATE TABLE IF NOT EXISTS user_wants_discs (
+                username VARCHAR(50),
+                disc_name VARCHAR(250),
+                disc_band VARCHAR(50),
+                want INTEGER,
+                CONSTRAINT pk_user_wants_discs PRIMARY KEY (username, disc_name, disc_band),
+                CONSTRAINT fk_user_wants_discs_username FOREIGN KEY (username)
+                    REFERENCES users (username),
+                CONSTRAINT fk_user_wants_discs_disc FOREIGN KEY (disc_name, disc_band)
+                    REFERENCES discs (name, band)
+            )
             """
         )
         foreign_keys = """
@@ -134,6 +148,20 @@ def create_tables(conn):
 
     except Exception as e:
         print(f"Error: {e}")
+
+def fill_user_wants_discs(conn):
+    print("Filling User Wants Discs...")
+    cur = conn.cursor()
+
+    cur.execute("SELECT username FROM users")
+    users = cur.fetchall()
+    for username in users:
+        cur.execute("select disc_name, disc_band FROM user_has_discs WHERE not username= %s", (username))
+        discs = cur.fetchall()
+        for disc in discs:
+            insert_query = "INSERT INTO user_wants_discs VALUES (%s, %s, %s, %s) ON CONFLICT DO NOTHING"
+            cur.execute(insert_query, (username, disc[0], disc[1], random.randint(1, 5)))
+        conn.commit()
 
 def load_users(conn):
     """
@@ -164,13 +192,14 @@ def load_users(conn):
     if df['gender'].isin(['N']).any():
         raise ValueError("Invalid gender in the CSV file (should be M or F).")
     df['gender'].fillna("N", inplace=True)
+    df['money'].fillna(0, inplace=True)
     if not df['gender'].isin(['M', 'F', 'N']).all():
         raise ValueError("Invalid gender in the CSV file (should be M or F).")
     df['age'].fillna(-1, inplace=True)
     df.fillna("unregistered", inplace=True)
 
-    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age) VALUES (%s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
-                   [(row['username'], encr(row['password']), row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age']) for index, row in df.iterrows()])
+    cursor.executemany("INSERT INTO users (username, password, first_name, last_name, phone, gender, country, age, money) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s) ON CONFLICT DO NOTHING",
+                   [(row['username'], encr(row['password']), row['first_name'], row['last_name'], row['phone'], row['gender'], row['country'], row['age'], row['money']) for index, row in df.iterrows()])
 
     conn.commit()
     print("Data inserted successfully.")
