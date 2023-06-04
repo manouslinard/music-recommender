@@ -40,6 +40,8 @@ WEB_SCRAPE_PRICES=1
 MAX_DISC_SCRAPE=-1
 NUMBER_REC_DISCS=1
 SECRET_KEY=YOUR_SECRET_KEY
+POPULATION_SIZE=6
+GENERATION_LIMIT=11
 ```
 The secret key is a sting used for user password encryption. This should have exact length 16, 24 or 32 characters. Do not change it when saving the users to database and then retrieving them in api.
 <br>
@@ -52,6 +54,9 @@ If you want to load the prices of csv file, set LOAD_PRICES=1 (it is recommended
 If you want to load prices from webscraping discogs, both LOAD_DATA and WEB_SCRAPE_PRICES should be equal to 1. If also you want to have a max limit of discs scraped per band, set MAX_DISC_SCRAPE to any positive number you want (this positive number is also the max limit).
 <br>
 NUMBER_REC_DISCS is the number of discs that will be recommended to each user.
+<br>
+POPULATION_SIZE is the population size for the genetic algorithm used in knapsack problem.
+GENERATION_LIMIT is the generation limit for the genetic algorithm.
 
 ---
 ## Users.csv file:
