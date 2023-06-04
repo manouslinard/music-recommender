@@ -103,17 +103,21 @@ def run_evolution(pop_size, genome_length, things, price_limit, generation_limit
     return population[0]    # returns the best genome.
 
 def genetic_knapshack(conn, pop_size, generation_limit):
-    query = """SELECT ud.username, users.money, ud.disc_name, 
-                ud.disc_band, ud.want, dp.values, dp.date
-                FROM user_wants_discs ud 
-                JOIN disc_prices dp ON ud.disc_name = dp.name 
-                and ud.disc_band = dp.band
-                JOIN users ON users.username = ud.username"""
+    # the following query returns the username, user's money, the disc name and band (from those the user wants),
+    # the wanted level of the disc (from 1 to 5) for this user and the latest price of a disc.
+    query = """
+        SELECT ud.username, users.money, ud.disc_name, ud.disc_band, ud.want, dp.values
+        FROM user_wants_discs ud 
+        JOIN (
+            SELECT name, band, MAX(date) AS max_date
+            FROM disc_prices
+            GROUP BY name, band
+        ) max_dp ON ud.disc_name = max_dp.name AND ud.disc_band = max_dp.band
+        JOIN disc_prices dp ON ud.disc_name = dp.name AND ud.disc_band = dp.band AND max_dp.max_date = dp.date
+        JOIN users ON users.username = ud.username;
+    """
     df = pd.read_sql_query(query, conn)
     df.rename(columns={'values': 'price'}, inplace=True)
-    df['date'] = pd.to_datetime(df['date'])
-    # Group by 'username' and get the row with the latest date for each username
-    df = df.groupby('username').apply(lambda x: x[x['date'] == x['date'].max()])
 
     user_wants = []
     # Extract unique usernames and corresponding money
@@ -122,7 +126,7 @@ def genetic_knapshack(conn, pop_size, generation_limit):
         username = row['username']
         filtered_df = df.loc[df['username'] == username]
         wanted = []
-        for index, disc in filtered_df.iterrows():
+        for _, disc in filtered_df.iterrows():
             wanted.append({"name": disc["disc_name"], "band":disc["disc_band"], "want":disc["want"], "price":disc["price"]})
         d = {"username": username, "money": row["money"], "wanted": wanted}
         user_wants.append(d)
