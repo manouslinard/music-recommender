@@ -414,22 +414,7 @@ def top_x_discs_by_quantity(conn, x=5):
 
     return top_x_discs
 
-
-# print(avg_user_band_age(conn, "scorpions"))
-# print(countries_most_music(conn))
-# print(band_most_listeners(conn, "coldplay"))
-# print(band_most_gender(conn, "coldplay"))
-# print(band_with_most_listeners(conn))
-# print(avg_disc_count(conn))
-# print(band_users_by_country(conn, "coldplay"))
-# print(disc_users_country(conn, "Moses"))
-# print(num_users_with_disc(conn, "Anthology 3"))
-# print(disc_most_gender(conn, "Clocks"))
-# print(most_listened_bands_by_country(conn))
-# print(top_x_discs_by_quantity(conn))
-
 # ==================================== PLOT =====================
-
 
 def plot_avg_user_band_age(conn, band_names):
     """
@@ -624,6 +609,21 @@ def plot_time_series(conn, discname, band):
 if __name__ == "__main__":
     load_dotenv()
     band_names = os.getenv("BAND_NAMES", "coldplay").split()
+    # QUESTIONS ===========================================
+    # print(avg_user_band_age(conn, "scorpions"))
+    # print(countries_most_music(conn))
+    # print(band_most_listeners(conn, "coldplay"))
+    # print(band_most_gender(conn, "coldplay"))
+    # print(band_with_most_listeners(conn))
+    # print(avg_disc_count(conn))
+    # print(band_users_by_country(conn, "coldplay"))
+    # print(disc_users_country(conn, "Moses"))
+    # print(num_users_with_disc(conn, "Anthology 3"))
+    # print(disc_most_gender(conn, "Clocks"))
+    # print(most_listened_bands_by_country(conn))
+    # print(top_x_discs_by_quantity(conn))
+
+    # GRAPHS =============================================
     # plot_avg_user_band_age(conn, band_names)
     # plot_countries_most_music(conn)
     # plot_top_x_discs_by_quantity(conn)
