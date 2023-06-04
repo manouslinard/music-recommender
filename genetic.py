@@ -186,6 +186,58 @@ def load_db_wanted_knapsack(conn, population_size, generation_limit):
     conn.commit()
     print("Discs Recommended With Knapsack.")
 
+def compare_results(conn, username):
+    # this query gets the specified attributes from the result after knapsack:
+    sql = """
+    SELECT u.username, u.money, d.name AS disc_name, dp.values AS disc_price, ud.want
+        FROM users u
+        JOIN user_rec_discs_knapsack urd ON u.username = urd.username
+        JOIN (
+            SELECT dp.name, dp.band, MAX(dp.date) AS max_date
+            FROM disc_prices dp
+            GROUP BY dp.name, dp.band
+        ) max_dp ON urd.disc_name = max_dp.name AND urd.disc_band = max_dp.band
+        JOIN discs d ON max_dp.name = d.name AND max_dp.band = d.band
+        JOIN disc_prices dp ON max_dp.name = dp.name AND max_dp.band = dp.band AND max_dp.max_date = dp.date
+        JOIN user_wants_discs ud ON urd.username = ud.username AND urd.disc_name = ud.disc_name AND urd.disc_band = ud.disc_band
+        where urd.username=%s;
+    """
+    df = pd.read_sql(sql, conn, params=(username,))
+    want_sum = df['want'].sum()
+    disc_price_sum = df['disc_price'].sum()
+    money = df["money"][0]
+    print("Genetic KnapSack Result:")
+    print(f"User {username} with money {money} achieved want level {want_sum} with cost {disc_price_sum}.")
+    print("=========")
+
+    # this query gets the results from all wanted discs for the user (with their latest price)
+    sql = """
+    SELECT u.username, u.money, uw.disc_name, uw.disc_band, uw.want, dp.values
+    FROM users u
+    JOIN user_wants_discs uw ON u.username = uw.username
+    JOIN (
+        SELECT d.name, d.band, MAX(dp.date) AS max_date
+        FROM disc_prices dp
+        JOIN discs d ON dp.name = d.name AND dp.band = d.band
+        GROUP BY d.name, d.band
+    ) max_dp ON uw.disc_name = max_dp.name AND uw.disc_band = max_dp.band
+    JOIN disc_prices dp ON max_dp.name = dp.name AND max_dp.band = dp.band AND max_dp.max_date = dp.date where u.username=%s;
+    """
+    df = pd.read_sql(sql, conn, params=(username,))
+    gn = generate_genome(len(df))   # generates random combination of choices for the user.
+    for i in gn:
+        if i == 0:
+            df = df.drop(i).reset_index(drop=True)
+
+    # now df contains only the discs from random selection.
+    want_sum = df['want'].sum()
+    disc_price_sum = df['values'].sum()
+    money = df["money"][0]
+    print("Random Result:")
+    print(f"User {username} with money {money} achieved want level {want_sum} with cost {disc_price_sum}.")
+    print("=========")
+
+
 if __name__ == "__main__":
     load_dotenv()
     # Connect to PostgreSQL database
@@ -195,10 +247,13 @@ if __name__ == "__main__":
         user=os.getenv("PSQL_USERNAME"),
         password=os.getenv("PSQL_PASSWORD")
     )
-    population_size = int(os.environ.get('POPULATION_SIZE', 5))
-    gen_limit = int(os.environ.get('GENERATION_LIMIT', 10))
-    load_db_wanted_knapsack(conn, population_size, gen_limit)
-    # Query to get the results in the database:
+
+    compare_results(conn, "btonnesen6")
+
+    # population_size = int(os.environ.get('POPULATION_SIZE', 5))
+    # gen_limit = int(os.environ.get('GENERATION_LIMIT', 10))
+    # load_db_wanted_knapsack(conn, population_size, gen_limit)
+    ## Query to get the results in the database:
     # SELECT u.username, u.money, d.name AS disc_name, dp.values AS disc_price
     # FROM users u
     # JOIN user_rec_discs_knapsack urd ON u.username = urd.username
