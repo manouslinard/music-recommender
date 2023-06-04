@@ -152,7 +152,7 @@ def genetic_knapshack(conn, pop_size, generation_limit):
     return res
 
 def load_db_wanted_knapsack(conn, population_size, generation_limit):
-    print("Recommending Discs with Knapsack...")
+    print("Recommending Discs with (Genetic) Knapsack...")
     q = """
     CREATE TABLE IF NOT EXISTS user_rec_discs_knapsack (
         username VARCHAR(50),
@@ -180,7 +180,7 @@ def load_db_wanted_knapsack(conn, population_size, generation_limit):
                 insert_query = "INSERT INTO user_rec_discs_knapsack VALUES (%s, %s, %s) ON CONFLICT DO NOTHING"
                 cursor.execute(insert_query, (user["username"], d[0], d[1]))
     conn.commit()
-    print("Discs Recommended With Knapsack (Genetic).")
+    print("Discs Recommended With Knapsack.")
 
 if __name__ == "__main__":
     load_dotenv()

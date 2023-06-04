@@ -4,7 +4,7 @@ import re
 import psycopg2
 from psycopg2.extensions import ISOLATION_LEVEL_AUTOCOMMIT
 import create_db
-from generic import load_db_wanted_knapsack
+from genetic import load_db_wanted_knapsack
 from dotenv import load_dotenv
 import os
 
