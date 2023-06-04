@@ -59,6 +59,19 @@ POPULATION_SIZE is the population size for the genetic algorithm used in knapsac
 GENERATION_LIMIT is the generation limit for the genetic algorithm.
 
 ---
+## Running the code:
+After you have configured the env file, you can run all the tasks by executing the following command:
+```
+python3 reset_db.py
+```
+<br>
+To show the stats - graphs, run:
+
+```
+python3 stats.py
+```
+
+---
 ## Users.csv file:
 In the users.csv file you can put the users of the project. Some users have also null attributes to test the handling of the NaN values. Users should always have a username.
 
@@ -77,20 +90,6 @@ For an easy restart of the database, just run:
 python3 reset_db.py
 ```
 This will drop and recreate the database tables.
-
----
-## Run App locally:
-To run the app, run:
-```
-python3 load_api.py
-```
-It is recommended to restart the database first (follow psql local config section).
-<br>
-To show the stats - graphs, run:
-
-```
-python3 stats.py
-```
 
 ---
 ## Run Dockerfile
