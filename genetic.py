@@ -16,13 +16,43 @@ warnings.filterwarnings("ignore", message="pandas only supports SQLAlchemy conne
 # ]
 
 def generate_genome(length: int) -> list:
+    """
+    Generates a genome - a binary string of random 1s and 0s.
+
+    Args:
+        length (int): The length of the genome.
+
+    Returns:
+        list: The generated genome as a list of 1s and 0s.
+    """
     # generates a genome - binary string of random 1s and 0s.
     return choices([0, 1], k=length)
 
 def generate_population(size: int, genome_length: int) -> list:
+    """
+    Generates a population of genomes.
+
+    Args:
+        size (int): The size of the population.
+        genome_length (int): The length of each genome.
+
+    Returns:
+        list: The generated population as a list of genomes.
+    """
     return [generate_genome(genome_length) for _ in range(size)] # generates a list of genomes.
 
 def fitness(genome: list, things: list, price_limit: int) -> int:
+    """
+    Calculates the fitness value of a genome based on the given things and price limit.
+
+    Args:
+        genome (list): The genome to evaluate.
+        things (list): The list of things (discs) with their attributes.
+        price_limit (int): The maximum price limit.
+
+    Returns:
+        int: The fitness value of the genome.
+    """
     if len(genome) != len(things):
         raise ValueError("genome and things must be of same length")
     price = 0
@@ -40,6 +70,17 @@ def fitness(genome: list, things: list, price_limit: int) -> int:
     return want
 
 def selection_pair(population, things, price_limit) -> list:
+    """
+    Selects a pair of genomes from the population based on their fitness values.
+
+    Args:
+        population (list): The population of genomes.
+        things (list): The list of things (discs) with their attributes.
+        price_limit (int): The maximum price limit.
+
+    Returns:
+        list: A pair of selected genomes.
+    """
     # returns the pair of the generation -> we import choices because it is not necessarily the most strong pair (but is higly likely with the weights)
     weights = [fitness(genome, things, price_limit) for genome in population]
     if all(weight == 0 for weight in weights):
@@ -51,6 +92,16 @@ def selection_pair(population, things, price_limit) -> list:
     )
 
 def crossover(parent_a: list, parent_b: list) -> list:
+    """
+    Performs crossover operation on two parent genomes to create two child genomes.
+
+    Args:
+        parent_a (list): The first parent genome.
+        parent_b (list): The second parent genome.
+
+    Returns:
+        list: A pair of child genomes produced.
+    """
     # mating of the parents and creation of 2 children
     if len(parent_a) != len(parent_b):
         raise ValueError("Genomes a and b must be the same lenght.")
@@ -62,6 +113,17 @@ def crossover(parent_a: list, parent_b: list) -> list:
 
 
 def mutation(genome: list, num: int = 1, probability: float = 0.5):
+    """
+    Perform mutation on the genome to create new genes.
+
+    Args:
+        genome (list): The genome to be mutated.
+        num (int, optional): The number of mutations to perform. Defaults to 1.
+        probability (float, optional): The probability of mutation for each gene. Defaults to 0.5.
+
+    Returns:
+        list: The mutated genome.
+    """
     # mutation (of the children) to create new gens!
     for _ in range(num):
         index = randrange(len(genome))
@@ -70,7 +132,19 @@ def mutation(genome: list, num: int = 1, probability: float = 0.5):
 
 
 def run_evolution(pop_size, genome_length, things, price_limit, generation_limit) -> list:
+    """
+    Performs evolutionary optimization using a genetic algorithm to solve a problem.
 
+    Args:
+        pop_size (int): The size of the population (number of genomes) in each generation.
+        genome_length (int): The length of each genome.
+        things (list): A list of items or elements to be optimized. The specific representation and format of the items depend on the problem being solved.
+        price_limit (float): A constraint or limit to be considered during optimization. The interpretation of the constraint depends on the problem being solved.
+        generation_limit (int): The number of generations to evolve.
+
+    Returns:
+        list: The best genome obtained after evolving for the specified number of generations.
+    """
     # create the population
     population = generate_population(pop_size, genome_length)
     # itterate throuth the number of generations:
@@ -103,6 +177,17 @@ def run_evolution(pop_size, genome_length, things, price_limit, generation_limit
     return population[0]    # returns the best genome.
 
 def genetic_knapshack(conn, pop_size, generation_limit):
+    """
+    Performs a genetic algorithm-based optimization to find the best combination of discs that users can buy given their budget constraints.
+
+    Args:
+        conn: The database connection object.
+        pop_size (int): The size of the population (number of genomes) in each generation for the genetic algorithm.
+        generation_limit (int): The number of generations to evolve the population.
+
+    Returns:
+        list: A list of dictionaries representing the recommended disc purchases for each user.
+    """
     # the following query returns the username, user's money, the disc name and band (from those the user wants),
     # the wanted level of the disc (from 1 to 5) for this user and the latest price of a disc.
     query = """
@@ -156,6 +241,13 @@ def genetic_knapshack(conn, pop_size, generation_limit):
     return res
 
 def load_db_wanted_knapsack(conn, population_size, generation_limit):
+    """
+    Recommends discs to users using a (genetic) knapsack algorithm and populates a database table with the recommendations.
+    Args:
+        conn: The database connection object.
+        population_size (int): The size of the population (number of genomes) in each generation for the genetic algorithm.
+        generation_limit (int): The number of generations to evolve the population.
+    """
     print("Recommending Discs with (Genetic) Knapsack...")
     q = """
     CREATE TABLE IF NOT EXISTS user_rec_discs_knapsack (
@@ -187,6 +279,13 @@ def load_db_wanted_knapsack(conn, population_size, generation_limit):
     print("Discs Recommended With Knapsack.")
 
 def compare_results(conn, username):
+    """
+    Compares the results of the genetic knapsack algorithm with a random selection of discs for a specific user.
+
+    Args:
+        conn: The database connection object.
+        username (str): The username of the user for whom the results are compared.
+    """
     # this query gets the specified attributes from the result after knapsack:
     sql = """
     SELECT u.username, u.money, d.name AS disc_name, dp.values AS disc_price, ud.want
