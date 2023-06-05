@@ -92,18 +92,7 @@ python3 reset_db.py
 This will drop and recreate the database tables.
 
 ---
-## Run Dockerfile
-Build the image:
-```
-docker build --no-cache -t music-recommender .
-```
-Now, run:
-```
-docker run --rm -it --network="host" -e LOAD_DATA=1 music-recommender
-```
-If you dont want to insert the ready-users from csv to docker db, set LOAD_DATA=0 in above command.
 
----
 ## Web-Scraping:
 
 The scrape.py scrapes prices from [discogs.com](https://www.discogs.com/). To get real prices, run:
