@@ -123,18 +123,24 @@ def find_user_friends_detail(username, conn):
         FROM user_friends uf
         JOIN Users u ON uf.friend_username = u.username
         WHERE uf.username = %s
+        AND uf.friend_username <> %s  -- Exclude the user
         UNION
         SELECT u.username, u.first_name, u.last_name, u.country, u.gender, u.age
         FROM user_friends uf
         JOIN Users u ON uf.username = u.username
         WHERE uf.friend_username = %s
+        AND uf.username <> %s  -- Exclude the user
+
     """
-    params = (username, username)
+
+    params = (username, username, username, username)  # Modify params tuple to include the username four times
     df = pd.read_sql(query, conn, params=params)
     df['age'] = df['age'].replace(-1, 'unregistered')
     df['gender'] = df['gender'].replace('N', 'unregistered')
     users = df.to_dict('records')
     return users
+
+
 
 def get_user_discs(username, conn):
     """
@@ -186,6 +192,8 @@ def find_user_friends(username, conn):
     merged_list = list(set([item[0] for item in results]))
     return merged_list
 
+
+
 def find_specific_friends(username, friend_name, conn):
     """
     Retrieves detailed information about a specific friend of a user.
@@ -199,6 +207,7 @@ def find_specific_friends(username, friend_name, conn):
         dict or None: A dictionary containing the detailed information about the friend,
                       or None if the friend is not found.
     """
+    print(friend_name)
     friends = find_user_friends_detail(username, conn)
     for f in friends:
         if friend_name == f["username"]:
@@ -304,7 +313,7 @@ def get_requested_friend(friends_username):
         return auth[0]
     username = auth[0]
     # ------
-    friend = find_specific_friends(friends_username, username, conn)
+    friend = find_specific_friends(username,friends_username, conn)
     if not friend:
         return jsonify({'message': "Requested friend not found."}), 404
     return jsonify({'friend': friend}), 200
