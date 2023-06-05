@@ -150,6 +150,15 @@ def create_tables(conn):
         print(f"Error: {e}")
 
 def fill_user_wants_discs(conn):
+    """
+    Fills User Wants Discs table with records for each user and their desired discs.
+
+    Args:
+        conn: The database connection object.
+
+    Returns:
+        None
+    """
     print("Filling User Wants Discs...")
     cur = conn.cursor()
 
