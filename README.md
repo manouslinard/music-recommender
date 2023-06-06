@@ -107,3 +107,7 @@ To run the flask api, run (from root directory):
 python3 api.py
 ```
 The api runs in [localhost:5000](http://localhost:5000/).You can see more about the API endpoints in this [link](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).
+
+---
+## Documentation:
+You can find the documentation of this project [here](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).
