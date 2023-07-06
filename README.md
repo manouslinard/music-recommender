@@ -111,3 +111,7 @@ The api runs in [localhost:5000](http://localhost:5000/).You can see more about 
 ---
 ## Documentation:
 You can find the documentation of this project [here](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).
+
+---
+## Project Presentation:
+You can view a powerpoint presentation about the web scraping and flask api used in the project [here](https://docs.google.com/presentation/d/1E20hACpjHziF77l9EzYc_tFaF4XJtewORo1d-ILIvdQ/edit?usp=sharing).
