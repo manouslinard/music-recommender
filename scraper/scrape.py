@@ -51,7 +51,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False, p
     button.click()
     time.sleep(5)
 
-    table = driver.find_element(By.ID, 'artist')
+    table = driver.find_element(By.CSS_SELECTOR, '.textWithCovers_2o9C3')
     table_html = table.get_attribute('outerHTML')
 
     albums = {}
@@ -69,6 +69,7 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False, p
     # print(albums.keys())
 
     if disc_name not in albums:
+        print("Requested Disc not found.")
         return pd.DataFrame()   # returns empty pandas Dataframe.
 
     driver.get(albums[disc_name])
@@ -191,4 +192,4 @@ def load_prices_discogs(artist_name, disc_name, MAX_PAGES=10, write_csv=False, p
     return df
 
 if __name__ == "__main__":
-    load_prices_discogs("29735", "Parachutes", write_csv=True, plot=True)
+    load_prices_discogs("81013", "Queen", write_csv=False, plot=True, MAX_PAGES=1)
