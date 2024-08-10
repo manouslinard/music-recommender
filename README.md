@@ -110,7 +110,7 @@ The api runs in [localhost:5000](http://localhost:5000/). You can see more about
 
 ---
 ## Documentation:
-You can find the documentation of this project in Greek [here](/files/DecisionSystem_%20Assignment_GR.pdf). The documentation has also been translated automatically in English and can be found [here](/files/DecisionSystem_%20Assignment_ENG.pdf).
+You can find the documentation of this project in Greek [here](/files/DecisionSystem_Assignment_GR.pdf). The documentation has also been translated automatically in English and can be found [here](/files/DecisionSystem_Assignment_ENG.pdf).
 
 ---
 ## Project Presentation:
