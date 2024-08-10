@@ -106,12 +106,12 @@ To run the flask api, run (from root directory):
 ```
 python3 api.py
 ```
-The api runs in [localhost:5000](http://localhost:5000/).You can see more about the API endpoints in this [link](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).
+The api runs in [localhost:5000](http://localhost:5000/). You can see more about the API endpoints in the documentation (see below).
 
 ---
 ## Documentation:
-You can find the documentation of this project [here](https://docs.google.com/document/d/1WhIar2-feJ3ppqDf71aAg4SumlK_HaUlUARI-Orx2fw/edit?usp=sharing).
+You can find the documentation of this project in Greek [here](/files/DecisionSystem_%20Assignment_GR.pdf). The documentation has also been translated automatically in English and can be found [here](/files/DecisionSystem_%20Assignment_ENG.pdf).
 
 ---
 ## Project Presentation:
-You can view a powerpoint presentation about the web scraping and flask api used in the project [here](https://docs.google.com/presentation/d/1E20hACpjHziF77l9EzYc_tFaF4XJtewORo1d-ILIvdQ/edit?usp=sharing).
+You can view a powerpoint presentation about the web scraping and flask api used in the project [here (greek)](/files/Webscraper_Flask_API_GR.pdf). You can also find the presentation in English (using automatic translation) [here](/files/Webscraper_Flask_API_ENG.pdf).
